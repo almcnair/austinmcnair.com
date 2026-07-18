@@ -1,17 +1,335 @@
 ---
+import Layout from '../layouts/Layout.astro';
+import ProductShot from '../components/ProductShot.astro';
+import ArticleCard from '../components/ArticleCard.astro';
+import ProjectRow from '../components/ProjectRow.astro';
+import ContactCard from '../components/ContactCard.astro';
 
+// TODO(austin): replace placeholder article deks with real drafts once available.
+const articles = [
+  {
+    href: '/writing/missions',
+    category: 'Framework',
+    title: 'The Missions Framework',
+    dek: 'Why I stopped calling them lessons. What changes when a sixth grader thinks she is on a mission instead of doing worksheets.',
+    readTime: '14 min',
+    date: 'July 2026',
+    featured: true,
+  },
+  {
+    href: '/writing/teacher-moves',
+    category: 'Case Study',
+    title: 'Teacher Moves: what I do when a kid shuts down',
+    dek: 'Five moves I make in the first ninety seconds, ranked by cost. The one I use most is also the one that most surprises new teachers.',
+    readTime: '9 min',
+    date: 'June 2026',
+  },
+  {
+    href: '/writing/one-idea-per-slide',
+    category: 'Field Notes',
+    title: 'One idea per slide, and other things I learned the hard way',
+    dek: 'A short piece on cognitive load, the third-period student who would not start, and the redesign that came from her stuck moment.',
+    readTime: '6 min',
+    date: 'May 2026',
+  },
+  {
+    href: '/writing/curriculum-as-product',
+    category: 'Framework',
+    title: 'Designing curriculum like a product manager',
+    dek: 'What I stole from software product design and how it changed the way I plan a unit. Includes the one-pager I use every August.',
+    readTime: '11 min',
+    date: 'April 2026',
+  },
+];
+
+// TODO(austin): confirm the third outcome stat. First two are locked from the guide.
+const outcomes = [
+  { stat: '12', label: 'Missions shipped, WCAG 2.1 AA' },
+  { stat: '5th', label: 'Grade reading floor, throughout' },
+  { stat: '6→8', label: 'Grades using it in Chicago' },
+];
+
+const projects = [
+  {
+    name: 'MathMissions 101',
+    description: 'A K–2 numeracy platform using the same mission scaffold. Draft in Figma; pilot planned for fall.',
+    status: 'planning' as const,
+  },
+  {
+    name: 'InclusionLab.AI',
+    description: 'A teacher-facing IEP-support tool. Small, focused, no login, no data retention.',
+    status: 'planning' as const,
+  },
+  {
+    name: 'HoloSketch',
+    description: 'A browser-based graphic organizer builder for SPED teachers. Ships an artifact, not a login.',
+    status: 'planning' as const,
+  },
+  {
+    name: 'Jeopardy Creator',
+    description: 'Free teacher tool. Fill a form, download a self-contained playable board. No account.',
+    status: 'live' as const,
+    href: '/tools/jeopardy-creator',
+  },
+];
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<Layout title="Austin McNair — Special Ed Teacher · Senior Digital Designer">
+  <section class="hero">
+    <div class="hero-copy">
+      <div class="kicker">Case Study · Live product</div>
+      <h1>I built <em>a space academy</em> to teach seventh graders policy debate.</h1>
+      <p class="dek">
+        policydebate101.com is a fully accessible, gamified curriculum platform I designed, wrote,
+        and shipped for Chicago middle schoolers who had never heard of forensic debate. Twelve
+        missions, one Support Commander, and a graphic-organizer engine that runs in the browser.
+      </p>
+      <div class="cta-row">
+        <a href="#pd101" class="btn">Read the case study →</a>
+        <a href="#writing" class="btn ghost">Or read the writing</a>
+      </div>
+    </div>
+
+    <ProductShot
+      src="/img/pd101-mission-control.png"
+      alt="policydebate101.com Mission Control screen: Support Commander avatar, welcome message, Cadet rank, and the first launchable mission."
+      url="policydebate101.com/missions"
+      caption="Live · Mission Control"
+      eager={true}
+    />
+  </section>
+
+  <section id="pd101" class="case-study">
+    <div class="eyebrow">The Flagship</div>
+    <h2 class="section-h">policydebate101.com — an accessible debate curriculum, shipped.</h2>
+
+    <div class="case-body">
+      <p>
+        <strong>The problem.</strong> Policy debate is the highest-leverage academic activity most
+        middle schoolers will never touch. The barrier is not intelligence — it is an intimidating
+        vocabulary, a culture that assumes you already know the format, and materials written for
+        high-school varsity. My sixth graders needed a runway.
+      </p>
+      <p>
+        <strong>What I built.</strong> A twelve-mission, self-paced platform where a "Support
+        Commander" narrator walks the student through their first cross-examination. Graphic
+        organizers are interactive; the reading floor is 5th grade; the tone is warm, not
+        corporate. Every screen was audited for cognitive load — one idea per screen, one action
+        per screen.
+      </p>
+      <p>
+        <strong>How it is used.</strong> Chicago Debates uses it as summer-institute pre-work. My
+        co-teacher and I use it as differentiated in-class instruction — students who need the
+        scaffolding get missions, students who do not move to live rounds sooner.
+      </p>
+
+      <figure class="case-shot">
+        <ProductShot
+          src="/img/pd101-lessons.png"
+          alt="policydebate101.com Lesson resource view: sidebar list of lesson slide decks, embedded slide viewer, and a magenta download graphic organizer button."
+          url="policydebate101.com/resources/lessons"
+          caption="Teacher-facing · Lesson decks & organizers"
+        />
+        <figcaption>
+          The Debater Resources view: every slide deck used in class, every worksheet as a PDF
+          download. This is the teacher-facing side of the same platform — same visual language,
+          different vocabulary.
+        </figcaption>
+      </figure>
+
+      <div class="outcomes">
+        {outcomes.map(({ stat, label }) => (
+          <div class="outcome">
+            <div class="stat">{stat}</div>
+            <div class="stat-label">{label}</div>
+          </div>
+        ))}
+      </div>
+
+      <p><a href="/work/policydebate101">Read the full case study →</a></p>
+    </div>
+  </section>
+
+  <section id="writing">
+    <div class="eyebrow">Selected Writing</div>
+    <h2 class="section-h">Field notes from a Chicago SPED classroom.</h2>
+    <div class="article-list">
+      {articles.map((a) => <ArticleCard {...a} />)}
+    </div>
+  </section>
+
+  <section id="work">
+    <div class="eyebrow">Other Work</div>
+    <h2 class="section-h">Products, in various states of shipped.</h2>
+    <div class="project-list">
+      {projects.map((p) => <ProjectRow {...p} />)}
+    </div>
+  </section>
+
+  <section id="about">
+    <div class="eyebrow">About</div>
+    <h2 class="section-h">Special education teacher. Product designer. In Chicago.</h2>
+    <div class="about-body">
+      <p>
+        I teach special education at John Fiske IB World School on Chicago's South Side. I co-teach
+        6th and 7th grade Individuals & Society with a partner teacher and pull students out for
+        8th-grade Math and 7th-grade ELA. My design work grew out of that classroom — every
+        product I have shipped started with a specific student who needed a specific thing that
+        did not exist yet.
+      </p>
+      <p>
+        I hold an MAT and I think of myself, more than anything, as a
+        <em>craftsperson of the school day</em>. If it is on the wall or on the screen, I want it
+        to earn the wall or the screen.
+      </p>
+    </div>
+  </section>
+
+  <ContactCard />
+</Layout>
+
+<style>
+  section {
+    max-width: var(--site-max);
+    margin: 0 auto;
+    padding: 72px var(--edge-pad);
+    border-top: 1px solid var(--line);
+  }
+
+  /* HERO */
+  .hero {
+    max-width: var(--site-max);
+    margin: 0 auto;
+    padding: 96px var(--edge-pad) 72px;
+    display: grid;
+    grid-template-columns: 1.05fr 1fr;
+    gap: 56px;
+    align-items: center;
+    border-top: none;
+  }
+  .hero-copy .kicker {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .hero-copy .kicker::before {
+    content: '';
+    width: 32px;
+    height: 1px;
+    background: var(--text-faint);
+  }
+  .hero-copy h1 {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: clamp(38px, 5.5vw, 60px);
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+    margin: 0 0 24px;
+  }
+  .hero-copy h1 em {
+    font-style: italic;
+    color: var(--cyan);
+    font-weight: 500;
+  }
+  .hero-copy .dek {
+    font-family: var(--font-serif);
+    font-size: 20px;
+    line-height: 1.55;
+    color: var(--text-dim);
+    max-width: 44ch;
+    margin: 0 0 32px;
+  }
+  .hero-copy .cta-row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  /* CASE STUDY BODY */
+  .case-body {
+    max-width: var(--content-max);
+  }
+  .case-body p {
+    font-family: var(--font-serif);
+    font-size: 19px;
+    line-height: 1.7;
+    color: var(--text-dim);
+    margin: 0 0 20px;
+  }
+  .case-body p strong {
+    color: var(--text);
+    font-weight: 500;
+  }
+  .case-body p a {
+    color: var(--cyan);
+  }
+
+  .case-shot {
+    margin: 40px 0;
+  }
+  .case-shot figcaption {
+    margin-top: 12px;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    color: var(--text-faint);
+    letter-spacing: 0.02em;
+    line-height: 1.5;
+    max-width: 62ch;
+  }
+
+  .outcomes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+    margin: 40px 0;
+    padding: 32px 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .outcome .stat {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: 34px;
+    color: var(--text);
+    letter-spacing: -0.01em;
+    margin-bottom: 6px;
+    line-height: 1.1;
+  }
+  .outcome .stat-label {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    color: var(--text-faint);
+  }
+
+  /* ABOUT */
+  .about-body {
+    max-width: var(--content-max);
+  }
+  .about-body p {
+    font-family: var(--font-serif);
+    font-size: 19px;
+    line-height: 1.7;
+    color: var(--text-dim);
+    margin: 0 0 20px;
+  }
+  .about-body p em {
+    color: var(--cyan);
+    font-style: italic;
+  }
+
+  @media (max-width: 900px) {
+    .hero {
+      grid-template-columns: 1fr;
+      gap: 48px;
+      padding: 56px var(--edge-pad) 40px;
+    }
+    .outcomes { grid-template-columns: 1fr; gap: 20px; }
+  }
+</style>

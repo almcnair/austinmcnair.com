@@ -1,0 +1,85 @@
+---
+interface Props {
+  href: string;
+  category: string;
+  title: string;
+  dek: string;
+  readTime: string;
+  date: string;
+  featured?: boolean;
+}
+
+const { href, category, title, dek, readTime, date, featured = false } = Astro.props;
+---
+
+<article class="article">
+  <div class="cat">{category}</div>
+  <div class="body">
+    <h3><a href={href}>{title}</a></h3>
+    <p class="dek">{dek}</p>
+    <div class="meta">{readTime} · {date}</div>
+  </div>
+  <div class="meta-side">{featured ? 'Featured' : date}</div>
+</article>
+
+<style>
+  .article {
+    padding: 32px 0;
+    border-bottom: 1px solid var(--line);
+    display: grid;
+    grid-template-columns: 140px 1fr 120px;
+    gap: 32px;
+    align-items: baseline;
+  }
+  .article:last-child { border-bottom: none; }
+
+  .cat {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--warm);
+  }
+
+  .body h3 {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: 26px;
+    line-height: 1.25;
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+  }
+  .body h3 a {
+    color: var(--text);
+    border: none;
+    transition: color 200ms ease;
+  }
+  .body h3 a:hover { color: var(--cyan); }
+
+  .body .dek {
+    font-family: var(--font-serif);
+    font-size: 16px;
+    color: var(--text-dim);
+    margin: 0 0 8px;
+    max-width: 60ch;
+  }
+  .body .meta {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    color: var(--text-faint);
+  }
+
+  .meta-side {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    color: var(--text-faint);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (max-width: 720px) {
+    .article { grid-template-columns: 1fr; gap: 8px; }
+    .meta-side { display: none; }
+  }
+</style>

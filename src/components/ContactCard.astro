@@ -1,0 +1,73 @@
+---
+interface Props {
+  heading?: string;
+  body?: string;
+}
+
+const {
+  heading = 'Hire me, quote me, or steal what works.',
+  body = "I'm open to speaking, PD sessions, product consultation, and full-time senior digital design roles in education. If any of that sounds useful, let's talk.",
+} = Astro.props;
+---
+
+<div id="contact" class="contact-card">
+  <h3>{heading}</h3>
+  <p>{body}</p>
+  <div class="links">
+    <a href="mailto:amcnair6@cps.edu">amcnair6@cps.edu</a>
+    <a href="https://policydebate101.com" target="_blank" rel="noopener">policydebate101.com</a>
+    <a href="#" data-todo="LinkedIn URL">LinkedIn</a>
+    <a href="#" data-todo="Résumé PDF">Résumé (PDF)</a>
+  </div>
+</div>
+
+<style>
+  .contact-card {
+    margin: 64px 0 96px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 48px;
+    position: relative;
+  }
+  .contact-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--cyan), var(--warm));
+  }
+  .contact-card h3 {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: 28px;
+    margin: 0 0 12px;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+  }
+  .contact-card p {
+    font-family: var(--font-serif);
+    font-size: 18px;
+    color: var(--text-dim);
+    margin: 0 0 24px;
+    max-width: 56ch;
+    line-height: 1.55;
+  }
+  .contact-card .links {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+  .contact-card .links a {
+    font-family: var(--font-sans);
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  @media (max-width: 720px) {
+    .contact-card { padding: 32px 24px; margin: 40px 0 64px; }
+    .contact-card .links { gap: 20px; }
+  }
+</style>

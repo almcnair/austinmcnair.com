@@ -1,0 +1,167 @@
+---
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('writing', ({ data }) => !data.draft || import.meta.env.DEV);
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: { post },
+  }));
+}
+
+interface Props {
+  post: CollectionEntry<'writing'>;
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+const dateFmt = post.data.date.toLocaleDateString('en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+---
+
+<Layout title={`${post.data.title} — Austin McNair`} description={post.data.dek}>
+  <article class="article-page">
+    <header>
+      <div class="cat">{post.data.category}</div>
+      <h1>{post.data.title}</h1>
+      <p class="dek">{post.data.dek}</p>
+      <div class="meta">
+        <span>By Austin McNair</span>
+        <span aria-hidden="true">·</span>
+        <span>{post.data.readTime}</span>
+        <span aria-hidden="true">·</span>
+        <time datetime={post.data.date.toISOString()}>{dateFmt}</time>
+      </div>
+    </header>
+
+    <div class="prose">
+      <Content />
+    </div>
+
+    <a href="/#writing" class="back">← Back to writing</a>
+  </article>
+</Layout>
+
+<style>
+  .article-page {
+    max-width: var(--content-max);
+    margin: 0 auto;
+    padding: 72px var(--edge-pad) 96px;
+  }
+
+  header { margin-bottom: 56px; }
+
+  .cat {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--warm);
+    margin-bottom: 24px;
+  }
+
+  h1 {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: clamp(36px, 5vw, 56px);
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin: 0 0 24px;
+  }
+
+  .dek {
+    font-family: var(--font-serif);
+    font-size: 22px;
+    line-height: 1.5;
+    color: var(--text-dim);
+    margin: 0 0 32px;
+    max-width: 44ch;
+  }
+
+  .meta {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    color: var(--text-faint);
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  /* Prose styling for MDX body */
+  .prose :global(p) {
+    font-family: var(--font-serif);
+    font-size: 19px;
+    line-height: 1.7;
+    color: var(--text);
+    margin: 0 0 24px;
+  }
+  .prose :global(p em) { font-style: italic; color: var(--cyan); }
+  .prose :global(h2) {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: 30px;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    margin: 56px 0 20px;
+  }
+  .prose :global(h3) {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: 24px;
+    margin: 40px 0 16px;
+  }
+  .prose :global(a) { color: var(--cyan); border-bottom: 1px solid rgba(34,211,238,0.4); }
+  .prose :global(a:hover) { border-bottom-color: var(--cyan); }
+  .prose :global(strong) { color: var(--text); font-weight: 600; }
+  .prose :global(ul),
+  .prose :global(ol) {
+    font-family: var(--font-serif);
+    font-size: 19px;
+    line-height: 1.7;
+    color: var(--text);
+    padding-left: 24px;
+    margin: 0 0 24px;
+  }
+  .prose :global(li) { margin-bottom: 8px; }
+  .prose :global(blockquote) {
+    border-left: 3px solid var(--cyan);
+    padding: 4px 0 4px 24px;
+    margin: 32px 0;
+    font-family: var(--font-serif);
+    font-style: italic;
+    color: var(--text-dim);
+  }
+  .prose :global(blockquote strong) {
+    font-family: var(--font-sans);
+    font-style: normal;
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    display: block;
+    margin-bottom: 8px;
+  }
+  .prose :global(hr) {
+    border: none;
+    border-top: 1px solid var(--line);
+    margin: 48px 0;
+  }
+
+  .back {
+    display: inline-block;
+    margin-top: 64px;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-dim);
+    border: none;
+  }
+  .back:hover { color: var(--cyan); }
+</style>

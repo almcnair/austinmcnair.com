@@ -1,0 +1,78 @@
+---
+const links = [
+  { href: '/#work', label: 'Work' },
+  { href: '/#writing', label: 'Writing' },
+  { href: '/#resources', label: 'Resources' },
+  { href: '/#about', label: 'About' },
+  { href: '/#contact', label: 'Contact' },
+];
+---
+
+<nav class="site-nav" aria-label="Primary">
+  <a href="/" class="wordmark" aria-label="Austin McNair — home">Austin McNair</a>
+  <ul class="links">
+    {links.map((l) => (
+      <li><a href={l.href}>{l.label}</a></li>
+    ))}
+  </ul>
+</nav>
+
+<style>
+  .site-nav {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 40px;
+    background: rgba(9, 12, 31, 0.86);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .wordmark {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    border: none;
+  }
+  .wordmark::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--cyan);
+    box-shadow: 0 0 12px rgba(34, 211, 238, 0.5);
+  }
+  .wordmark:hover { color: var(--cyan); border: none; }
+
+  .links {
+    display: flex;
+    gap: 28px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .links a {
+    color: var(--text-dim);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    border: none;
+  }
+  .links a:hover { color: var(--text); }
+
+  @media (max-width: 720px) {
+    .site-nav { padding: 14px 24px; }
+    .links { display: none; }
+  }
+</style>
