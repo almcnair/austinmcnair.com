@@ -15,6 +15,15 @@ const links = [
       <li><a href={l.href}>{l.label}</a></li>
     ))}
   </ul>
+  <a
+    href="/austin-mcnair-resume.pdf"
+    class="resume-cta"
+    download
+    aria-label="Download Austin McNair's résumé, PDF"
+  >
+    <span class="arrow" aria-hidden="true">↓</span>
+    <span class="label">Download Résumé</span>
+  </a>
 </nav>
 
 <style>
@@ -25,6 +34,7 @@ const links = [
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 24px;
     padding: 18px 40px;
     background: rgba(9, 12, 31, 0.86);
     backdrop-filter: blur(8px);
@@ -59,7 +69,7 @@ const links = [
     gap: 28px;
     list-style: none;
     padding: 0;
-    margin: 0;
+    margin: 0 auto 0 40px;
   }
   .links a {
     color: var(--text-dim);
@@ -71,8 +81,54 @@ const links = [
   }
   .links a:hover { color: var(--text); }
 
+  .resume-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 18px;
+    border: 1px solid var(--cyan);
+    border-radius: 999px;
+    background: rgba(34, 211, 238, 0.08);
+    color: var(--cyan);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+  }
+  .resume-cta:hover {
+    background: var(--cyan);
+    color: var(--void);
+    border-color: var(--cyan);
+    transform: translateY(-1px);
+  }
+  .resume-cta:focus-visible {
+    outline: 2px solid var(--cyan);
+    outline-offset: 3px;
+  }
+  .resume-cta .arrow {
+    font-size: 15px;
+    line-height: 1;
+    transform: translateY(1px);
+  }
+
   @media (max-width: 720px) {
-    .site-nav { padding: 14px 24px; }
+    .site-nav { padding: 12px 20px; gap: 12px; }
     .links { display: none; }
+    .resume-cta {
+      padding: 8px 14px;
+      font-size: 12px;
+    }
+    .resume-cta .label { display: inline; }
+  }
+
+  @media (max-width: 380px) {
+    .resume-cta .label { display: none; }
+    .resume-cta::after {
+      content: 'Résumé';
+      font-size: 12px;
+    }
   }
 </style>
