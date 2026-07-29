@@ -5,8 +5,17 @@ import ArticleCard from '../components/ArticleCard.astro';
 import ProjectRow from '../components/ProjectRow.astro';
 import ContactCard from '../components/ContactCard.astro';
 
-// TODO(austin): replace placeholder article deks with real drafts once available.
+// Only real, shipped articles. Homepage stays honest — no dead links.
 const articles = [
+  {
+    href: '/writing/pm-dashboard',
+    category: 'Field Notes',
+    title: 'I built a live progress monitoring dashboard for my special education classroom.',
+    dek: 'A custom tool for logging IEP goal progress, independence, and interventions in real time — and what it changes about writing progress reports.',
+    readTime: '3 min',
+    date: 'July 2026',
+    featured: true,
+  },
   {
     href: '/writing/why-i-built-pd101',
     category: 'Framework',
@@ -14,45 +23,19 @@ const articles = [
     dek: 'Competitive debate was never built for the students who need it most. Here is how I designed a policy debate platform that meets them where they are.',
     readTime: '4 min',
     date: 'July 2026',
-    featured: true,
-  },
-  {
-    href: '/writing/teacher-moves',
-    category: 'Case Study',
-    title: 'Teacher Moves: what I do when a kid shuts down',
-    dek: 'Five moves I make in the first ninety seconds, ranked by cost. The one I use most is also the one that most surprises new teachers.',
-    readTime: '9 min',
-    date: 'June 2026',
-  },
-  {
-    href: '/writing/one-idea-per-slide',
-    category: 'Field Notes',
-    title: 'One idea per slide, and other things I learned the hard way',
-    dek: 'A short piece on cognitive load, the third-period student who would not start, and the redesign that came from her stuck moment.',
-    readTime: '6 min',
-    date: 'May 2026',
-  },
-  {
-    href: '/writing/curriculum-as-product',
-    category: 'Framework',
-    title: 'Designing curriculum like a product manager',
-    dek: 'What I stole from software product design and how it changed the way I plan a unit. Includes the one-pager I use every August.',
-    readTime: '11 min',
-    date: 'April 2026',
   },
 ];
 
-// TODO(austin): confirm the third outcome stat. First two are locked from the guide.
+// Outcome stats — only claims I can defend. Third slot removed until real.
 const outcomes = [
   { stat: '12', label: 'Missions shipped, WCAG 2.1 AA' },
   { stat: '5th', label: 'Grade reading floor, throughout' },
-  { stat: '6→8', label: 'Grades using it in Chicago' },
 ];
 
 const projects = [
   {
     name: 'MathMissions 101',
-    description: 'A K–2 numeracy platform using the same mission scaffold. Draft in Figma; pilot planned for fall.',
+    description: 'A middle school numeracy platform using the same mission scaffold. Pilot planned for fall.',
     status: 'planning' as const,
   },
   {
@@ -77,30 +60,69 @@ const projects = [
 <Layout title="Austin McNair — Special Ed Teacher · Senior Digital Designer">
   <section class="hero">
     <div class="hero-copy">
-      <div class="kicker">Case Study · Live product</div>
-      <h1>I built <em>a space academy</em> to teach seventh graders policy debate.</h1>
+      <div class="kicker">Case Study · Classroom tool</div>
+      <h1>I built <em>a live progress dashboard</em> for my special education classroom.</h1>
       <p class="dek">
-        policydebate101.com is a fully accessible, gamified curriculum platform I designed, wrote,
-        and shipped for Chicago middle schoolers who had never heard of forensic debate. Twelve
-        missions, one Support Commander, and a graphic-organizer engine that runs in the browser.
+        A custom tool for logging IEP goal progress, independence, and interventions in the thirty
+        seconds between transitions — then rolling every entry into per-student analytics I can
+        drop straight into a progress report.
       </p>
       <div class="cta-row">
-        <a href="#pd101" class="btn">Read the case study →</a>
+        <a href="#pm-dashboard" class="btn">Read the case study →</a>
         <a href="#writing" class="btn ghost">Or read the writing</a>
       </div>
     </div>
 
     <ProductShot
-      src="/img/pd101-mission-control.png"
-      alt="policydebate101.com Mission Control screen: Support Commander avatar, welcome message, Cadet rank, and the first launchable mission."
-      url="policydebate101.com/missions"
-      caption="Live · Mission Control"
+      src="/img/pm-dashboard/dashboard-full.png"
+      alt="Progress Monitoring Dashboard overview: a class roster with per-student cards showing goal progress, independence, and intervention state at a glance."
+      url="dashboard · overview"
+      caption="Live · Classroom tool"
       eager={true}
     />
   </section>
 
-  <section id="pd101" class="case-study">
+  <section id="pm-dashboard" class="case-study">
     <div class="eyebrow">The Flagship</div>
+    <h2 class="section-h">Progress Monitoring Dashboard — IEP data, in the moment.</h2>
+
+    <div class="case-body">
+      <p>
+        <strong>The problem.</strong> In special education, data collection usually happens long
+        after the lesson ends. Vague memory produces vague records, and vague data makes writing
+        meaningful IEP progress reports an uphill battle.
+      </p>
+      <p>
+        <strong>What I built.</strong> A live dashboard where I log goal progress, independence
+        level, and intervention type in the thirty seconds between transitions. One tap per data
+        point. Every entry is timestamped and rolls up into per-student analytics I can drop
+        straight into a progress report.
+      </p>
+      <p>
+        <strong>How it changes IEP writing.</strong> Instead of reconstructing a quarter from
+        memory, I open the analytics view and read the pattern the data already tells. The
+        anecdote and the number arrive together.
+      </p>
+
+      <figure class="case-shot">
+        <ProductShot
+          src="/img/pm-dashboard/dashboard-analytics.png"
+          alt="Per-student analytics view from the Progress Monitoring Dashboard, showing goal-progress trends, independence levels, and intervention counts over time."
+          url="dashboard · student analytics"
+          caption="Analytics · Per-student rollup"
+        />
+        <figcaption>
+          The per-student rollup view: goal-progress trends, independence levels, and intervention
+          counts over time — the numbers I drop straight into a progress report.
+        </figcaption>
+      </figure>
+
+      <p><a href="/writing/pm-dashboard">Read the field notes →</a></p>
+    </div>
+  </section>
+
+  <section id="pd101" class="case-study">
+    <div class="eyebrow">Also Shipped</div>
     <h2 class="section-h">policydebate101.com — an accessible debate curriculum, shipped.</h2>
 
     <div class="case-body">
@@ -122,6 +144,19 @@ const projects = [
         co-teacher and I use it as differentiated in-class instruction — students who need the
         scaffolding get missions, students who do not move to live rounds sooner.
       </p>
+
+      <figure class="case-shot">
+        <ProductShot
+          src="/img/pd101-mission-control.png"
+          alt="policydebate101.com Mission Control screen: Support Commander avatar, welcome message, Cadet rank, and the first launchable mission."
+          url="policydebate101.com/missions"
+          caption="Live · Mission Control"
+        />
+        <figcaption>
+          Mission Control: where a student meets the Support Commander, sees her rank, and launches
+          her first mission. Every screen holds one idea, one action.
+        </figcaption>
+      </figure>
 
       <figure class="case-shot">
         <ProductShot
@@ -171,16 +206,8 @@ const projects = [
     <h2 class="section-h">Special education teacher. Product designer. In Chicago.</h2>
     <div class="about-body">
       <p>
-        I teach special education at John Fiske IB World School on Chicago's South Side. I co-teach
-        6th and 7th grade Individuals & Society with a partner teacher and pull students out for
-        8th-grade Math and 7th-grade ELA. My design work grew out of that classroom — every
-        product I have shipped started with a specific student who needed a specific thing that
-        did not exist yet.
-      </p>
-      <p>
-        I hold an MAT and I think of myself, more than anything, as a
-        <em>craftsperson of the school day</em>. If it is on the wall or on the screen, I want it
-        to earn the wall or the screen.
+        I am a special education teacher in Chicago, IL. Are you hiring? Email me{' '}
+        <a href="mailto:austin@austinmcnair.com">austin@austinmcnair.com</a>.
       </p>
     </div>
   </section>
@@ -286,7 +313,7 @@ const projects = [
 
   .outcomes {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 32px;
     margin: 40px 0;
     padding: 32px 0;
