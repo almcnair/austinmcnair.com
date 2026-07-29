@@ -18,9 +18,10 @@
 #
 # Exit codes:
 #   0  both hostnames fresh and (if given) contain expected string
-#   1  one or both hostnames are stale (aliases have drifted)
+#   1  one or both hostnames are stale (both frozen — no deploy happened)
 #   2  expected string missing on one or both hostnames
 #   3  network / curl failure
+#   4  hostnames diverged (alias-drift bug: apex updated, www did not)
 #
 # When it fails, the fix is almost always:
 #   vercel alias ls | grep austinmcnair
@@ -115,16 +116,37 @@ for h in "${HOSTS[@]}"; do
   fi
 done
 
-# Drift between hostnames: last-modified should match within one build cycle.
+# Drift between hostnames: last-modified should match within a short window.
+# The bug we're guarding against: apex updates on every push, www does not.
+# When www stays pinned to a previous deployment, its last-modified will be
+# minutes to days older than apex's. Fail hard when the gap exceeds the
+# drift threshold (default 5 minutes) — that's larger than any two builds
+# spaced across a normal push, and smaller than any real alias drift.
+DRIFT_THRESHOLD_SECONDS=${DRIFT_THRESHOLD_SECONDS:-300}
 lm_apex=$(cat "${STATE_DIR}/lastmod_$(host_key austinmcnair.com)")
 lm_www=$(cat "${STATE_DIR}/lastmod_$(host_key www.austinmcnair.com)")
-if [[ "$lm_apex" != "$lm_www" ]]; then
-  # A one-line diff on last-modified is usually fine (two builds seconds apart);
-  # a many-day diff is the exact bug we're guarding against.
-  echo "    ⚠️  last-modified differs between hostnames:"
-  echo "         apex: $lm_apex"
-  echo "         www : $lm_www"
-  echo "       If the dates are days apart, aliases have drifted."
+if [[ "$lm_apex" != "$lm_www" && "$lm_apex" != "unknown" && "$lm_www" != "unknown" ]]; then
+  # Convert HTTP-date to epoch. `date -j -f` is BSD (macOS); `date -d` is GNU.
+  if ts_apex=$(date -j -f "%a, %d %b %Y %H:%M:%S GMT" "$lm_apex" +%s 2>/dev/null) \
+  && ts_www=$(date -j -f "%a, %d %b %Y %H:%M:%S GMT" "$lm_www" +%s 2>/dev/null); then
+    :
+  else
+    ts_apex=$(date -d "$lm_apex" +%s 2>/dev/null || echo 0)
+    ts_www=$(date -d "$lm_www" +%s 2>/dev/null || echo 0)
+  fi
+  diff=$(( ts_apex > ts_www ? ts_apex - ts_www : ts_www - ts_apex ))
+  if (( diff > DRIFT_THRESHOLD_SECONDS )); then
+    echo "    ❌ HOSTNAMES DIVERGED (last-modified gap: ${diff}s > ${DRIFT_THRESHOLD_SECONDS}s threshold)"
+    echo "         apex: $lm_apex"
+    echo "         www : $lm_www"
+    echo "       This is the Vercel alias-drift bug (apex updates on push,"
+    echo "       www does not). Fix:"
+    echo "         NEWEST=\$(vercel list --yes 2>&1 | awk '/Ready.*Production/ && /austinmcnair-/ {print \$3; exit}')"
+    echo "         vercel alias set \"\$NEWEST\" www.austinmcnair.com"
+    fail=4
+  else
+    echo "    ✅ hostnames aligned (last-modified gap: ${diff}s ≤ ${DRIFT_THRESHOLD_SECONDS}s)"
+  fi
 fi
 
 # Expected substring on both.
@@ -139,8 +161,11 @@ if [[ -n "$EXPECT_STRING" ]]; then
   done
 fi
 
+echo
 if (( fail == 0 )); then
-  echo "    ✅ both hostnames green"
+  echo "==> ✅ PASS — both hostnames green"
   exit 0
+else
+  echo "==> ❌ FAIL (exit=$fail)"
+  exit $fail
 fi
-exit $fail
