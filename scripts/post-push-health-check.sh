@@ -15,6 +15,13 @@
 #   ./scripts/post-push-health-check.sh
 #   ./scripts/post-push-health-check.sh --expect "austin@austinmcnair.com"
 #   ./scripts/post-push-health-check.sh --path /writing/pm-dashboard
+#   ./scripts/post-push-health-check.sh --auto-fix
+#
+# --auto-fix will re-run `vercel alias set <newest-deployment>
+# www.austinmcnair.com` when the divergence check fails, then re-poll
+# until both hostnames align. This is a workaround for a real Vercel
+# project misconfig that should be fixed in the dashboard — see the
+# 2026-07-28 memory entry for the diagnosis.
 #
 # Exit codes:
 #   0  both hostnames fresh and (if given) contain expected string
@@ -33,12 +40,14 @@ HOSTS=("austinmcnair.com" "www.austinmcnair.com")
 PATH_TO_CHECK="/"
 EXPECT_STRING=""
 STALE_THRESHOLD_SECONDS=3600   # 1 hour; drift usually shows up as 10+ days
+AUTO_FIX=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --path)   PATH_TO_CHECK="$2"; shift 2 ;;
     --expect) EXPECT_STRING="$2"; shift 2 ;;
     --stale-threshold) STALE_THRESHOLD_SECONDS="$2"; shift 2 ;;
+    --auto-fix) AUTO_FIX=1; shift ;;
     -h|--help)
       grep -E '^# ' "$0" | sed 's/^# //'
       exit 0
@@ -120,9 +129,9 @@ done
 # The bug we're guarding against: apex updates on every push, www does not.
 # When www stays pinned to a previous deployment, its last-modified will be
 # minutes to days older than apex's. Fail hard when the gap exceeds the
-# drift threshold (default 5 minutes) — that's larger than any two builds
-# spaced across a normal push, and smaller than any real alias drift.
-DRIFT_THRESHOLD_SECONDS=${DRIFT_THRESHOLD_SECONDS:-300}
+# drift threshold. Two normal builds land within ~60s of each other on a push,
+# so 90s is enough to tolerate real build variance without masking drift.
+DRIFT_THRESHOLD_SECONDS=${DRIFT_THRESHOLD_SECONDS:-90}
 lm_apex=$(cat "${STATE_DIR}/lastmod_$(host_key austinmcnair.com)")
 lm_www=$(cat "${STATE_DIR}/lastmod_$(host_key www.austinmcnair.com)")
 if [[ "$lm_apex" != "$lm_www" && "$lm_apex" != "unknown" && "$lm_www" != "unknown" ]]; then
@@ -139,11 +148,42 @@ if [[ "$lm_apex" != "$lm_www" && "$lm_apex" != "unknown" && "$lm_www" != "unknow
     echo "    ❌ HOSTNAMES DIVERGED (last-modified gap: ${diff}s > ${DRIFT_THRESHOLD_SECONDS}s threshold)"
     echo "         apex: $lm_apex"
     echo "         www : $lm_www"
-    echo "       This is the Vercel alias-drift bug (apex updates on push,"
-    echo "       www does not). Fix:"
-    echo "         NEWEST=\$(vercel list --yes 2>&1 | awk '/Ready.*Production/ && /austinmcnair-/ {print \$3; exit}')"
-    echo "         vercel alias set \"\$NEWEST\" www.austinmcnair.com"
-    fail=4
+    echo "       Vercel alias-drift bug: apex updates on push, www does not."
+
+    if (( AUTO_FIX == 1 )); then
+      echo
+      echo "==> --auto-fix engaged: re-aliasing www to newest production deploy"
+      NEWEST=$(vercel list --yes 2>&1 | awk '/Ready.*Production/ && /austinmcnair-/ {print $3; exit}')
+      if [[ -z "$NEWEST" ]]; then
+        echo "    ❌ could not resolve newest deployment url — aborting auto-fix"
+        fail=4
+      else
+        echo "    newest: $NEWEST"
+        if vercel alias set "$NEWEST" www.austinmcnair.com 2>&1 | tail -3; then
+          echo "    ✅ alias updated. Waiting 10s then re-checking..."
+          sleep 10
+          new_lm_www=$(curl -sSI --max-time 15 "https://www.austinmcnair.com/?cb=$RANDOM$RANDOM" 2>/dev/null | \
+                       awk 'tolower($1)=="last-modified:" { $1=""; print substr($0,2) }' | tr -d '\r' | head -1)
+          echo "    www last-modified now: $new_lm_www"
+          if [[ "$new_lm_www" == "$lm_apex" ]]; then
+            echo "    ✅ auto-fix succeeded — www now aligned with apex"
+            # Don't set fail=4; drift is resolved.
+          else
+            echo "    ⚠️  auto-fix ran but www still doesn't match apex — investigate manually"
+            fail=4
+          fi
+        else
+          echo "    ❌ vercel alias set failed — investigate manually"
+          fail=4
+        fi
+      fi
+    else
+      echo "       Fix:"
+      echo "         NEWEST=\$(vercel list --yes 2>&1 | awk '/Ready.*Production/ && /austinmcnair-/ {print \$3; exit}')"
+      echo "         vercel alias set \"\$NEWEST\" www.austinmcnair.com"
+      echo "       Or re-run this script with --auto-fix."
+      fail=4
+    fi
   else
     echo "    ✅ hostnames aligned (last-modified gap: ${diff}s ≤ ${DRIFT_THRESHOLD_SECONDS}s)"
   fi
