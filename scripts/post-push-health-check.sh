@@ -6,10 +6,15 @@
 #
 # Root of why this exists: on 2026-07-19 the Vercel alias for
 # www.austinmcnair.com decoupled from the apex domain's alias. For ten days,
-# every push updated `austinmcnair.com` but left `www.austinmcnair.com` frozen
-# on a stale deployment. If it drifts again, this script catches it in seconds
-# instead of "the following Tuesday, when Austin notices the old email is
-# still showing on the URL he actually browses to."
+# every push updated the deployment that `austinmcnair.com` pointed at but
+# left `www.austinmcnair.com` frozen on a stale deployment. Because www is
+# the canonical URL (apex 308-redirects to www), users browsing to the site
+# saw stale content for 10 days.
+#
+# This script curls both hostnames with -L (follow redirects) so both land
+# on the actual served HTML, then compares last-modified. If they diverge,
+# --auto-fix runs `vercel alias set <newest> www.austinmcnair.com` and
+# re-verifies.
 #
 # Usage:
 #   ./scripts/post-push-health-check.sh
@@ -74,15 +79,26 @@ for h in "${HOSTS[@]}"; do
   key=$(host_key "$h")
   echo "--- ${h}"
 
-  # Response headers.
-  if ! headers=$(curl -sSI --max-time 15 "$url" 2>&1); then
+  # Response headers. `-L` follows redirects so apex-→-www (308) still
+  # lands on real HTML headers, not the redirect stub. We take the LAST
+  # HTTP response block's headers via `--write-out` + reading the final
+  # response body separately.
+  if ! headers=$(curl -sSIL --max-time 15 "$url" 2>&1); then
     echo "    ERROR curl -I failed for ${h}"
     exit 3
   fi
 
-  age=$(echo "$headers" | awk 'tolower($1)=="age:" { print $2 }' | tr -d '\r' | head -1)
-  lastmod=$(echo "$headers" | awk 'tolower($1)=="last-modified:" { $1=""; print substr($0,2) }' | tr -d '\r' | head -1)
-  vcache=$(echo "$headers" | awk 'tolower($1)=="x-vercel-cache:" { print $2 }' | tr -d '\r' | head -1)
+  # When following redirects, curl prints headers for EVERY hop. Grab only
+  # the last hop's headers (everything after the final HTTP/x status line).
+  final_headers=$(echo "$headers" | awk '
+    /^HTTP\// { block=""; next }
+    { block = block $0 "\n" }
+    END { print block }
+  ')
+
+  age=$(echo "$final_headers" | awk 'tolower($1)=="age:" { print $2 }' | tr -d '\r' | head -1)
+  lastmod=$(echo "$final_headers" | awk 'tolower($1)=="last-modified:" { $1=""; print substr($0,2) }' | tr -d '\r' | head -1)
+  vcache=$(echo "$final_headers" | awk 'tolower($1)=="x-vercel-cache:" { print $2 }' | tr -d '\r' | head -1)
 
   echo "${age:-0}"   > "${STATE_DIR}/age_${key}"
   printf '%s' "${lastmod:-unknown}" > "${STATE_DIR}/lastmod_${key}"
@@ -91,7 +107,7 @@ for h in "${HOSTS[@]}"; do
 
   # Body check when --expect is provided.
   if [[ -n "$EXPECT_STRING" ]]; then
-    if ! body=$(curl -sS --max-time 15 "$url" 2>&1); then
+    if ! body=$(curl -sSL --max-time 15 "$url" 2>&1); then
       echo "    ERROR curl body failed for ${h}"
       exit 3
     fi
@@ -162,8 +178,8 @@ if [[ "$lm_apex" != "$lm_www" && "$lm_apex" != "unknown" && "$lm_www" != "unknow
         if vercel alias set "$NEWEST" www.austinmcnair.com 2>&1 | tail -3; then
           echo "    ✅ alias updated. Waiting 10s then re-checking..."
           sleep 10
-          new_lm_www=$(curl -sSI --max-time 15 "https://www.austinmcnair.com/?cb=$RANDOM$RANDOM" 2>/dev/null | \
-                       awk 'tolower($1)=="last-modified:" { $1=""; print substr($0,2) }' | tr -d '\r' | head -1)
+          new_lm_www=$(curl -sSIL --max-time 15 "https://www.austinmcnair.com/?cb=$RANDOM$RANDOM" 2>/dev/null | \
+                       awk 'tolower($1)=="last-modified:" { $1=""; print substr($0,2) }' | tr -d '\r' | tail -1)
           echo "    www last-modified now: $new_lm_www"
           if [[ "$new_lm_www" == "$lm_apex" ]]; then
             echo "    ✅ auto-fix succeeded — www now aligned with apex"
