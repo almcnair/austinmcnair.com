@@ -27,7 +27,9 @@ const dateFmt = post.data.date.toLocaleDateString('en-US', {
   <article class="article-page">
     <header>
       <div class="cat">{post.data.category}</div>
-      <h1>{post.data.title}</h1>
+      {post.data.titleHtml
+        ? <h1 set:html={post.data.titleHtml} />
+        : <h1>{post.data.title}</h1>}
       <p class="dek">{post.data.dek}</p>
       <div class="meta">
         <span>By Austin McNair</span>
@@ -73,6 +75,7 @@ const dateFmt = post.data.date.toLocaleDateString('en-US', {
     line-height: 1.1;
     margin: 0 0 24px;
   }
+  h1 :global(em) { font-style: italic; color: var(--cyan); }
 
   .dek {
     font-family: var(--font-serif);
@@ -152,6 +155,115 @@ const dateFmt = post.data.date.toLocaleDateString('en-US', {
     border: none;
     border-top: 1px solid var(--line);
     margin: 48px 0;
+  }
+
+  /* Metric callouts — dividers, not cards (Brand Guide §4.4) */
+  .prose :global(ul.metric-list) {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 32px;
+    border-top: 1px solid var(--line);
+  }
+  .prose :global(ul.metric-list li) {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 24px;
+    padding: 22px 0;
+    border-bottom: 1px solid var(--line);
+    font-family: var(--font-serif);
+    font-size: 18px;
+    line-height: 1.55;
+    color: var(--text);
+    margin: 0;
+  }
+  .prose :global(ul.metric-list .tag) {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.14em;
+    color: var(--cyan);
+    padding-top: 4px;
+  }
+  @media (max-width: 620px) {
+    .prose :global(ul.metric-list li) {
+      grid-template-columns: 1fr;
+      gap: 6px;
+    }
+  }
+
+  /* Inline figure — in the 780px prose column */
+  .prose :global(figure.inline-figure) {
+    margin: 40px 0 48px;
+  }
+  .prose :global(figure.inline-figure .frame) {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--panel);
+    box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.6);
+  }
+  .prose :global(figure.inline-figure img) {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .prose :global(figure.inline-figure figcaption) {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    color: var(--text-faint);
+    margin-top: 14px;
+    letter-spacing: 0.01em;
+    max-width: 62ch;
+  }
+  .prose :global(figure.inline-figure figcaption strong) {
+    font-family: var(--font-sans);
+    color: var(--text-dim);
+    font-weight: 600;
+    margin-right: 6px;
+  }
+
+  /* Lede figure — breakout wider than the prose column, up to site-max */
+  .prose :global(figure.lede-figure) {
+    /* Escape the 780px prose column and expand to site-max (1080px). */
+    width: calc(100vw - (2 * var(--edge-pad)));
+    max-width: var(--site-max);
+    margin-left: calc(50% - min(50vw, var(--site-max) / 2) + var(--edge-pad));
+    margin-right: 0;
+    margin-top: -8px;
+    margin-bottom: 56px;
+  }
+  .prose :global(figure.lede-figure .frame) {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--panel);
+    box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.6);
+  }
+  .prose :global(figure.lede-figure img) {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .prose :global(figure.lede-figure figcaption) {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    color: var(--text-faint);
+    margin-top: 14px;
+    letter-spacing: 0.01em;
+    max-width: 62ch;
+  }
+  .prose :global(figure.lede-figure figcaption strong) {
+    font-family: var(--font-sans);
+    color: var(--text-dim);
+    font-weight: 600;
+    margin-right: 6px;
+  }
+  @media (max-width: 960px) {
+    .prose :global(figure.lede-figure) {
+      width: 100%;
+      margin-left: 0;
+      margin-right: 0;
+    }
   }
 
   .back {
