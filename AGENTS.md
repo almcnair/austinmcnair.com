@@ -14,9 +14,29 @@ The brand + style guide is canonical. It lives at:
 ~/Desktop/austinmcnair.com/AUSTINMCNAIR_BRAND_AND_STYLE_GUIDE.md
 ```
 
-**Current version:** v5 (2026-07-18). The home template is **Case Study Hero** (§5.1) with PD101 in the two-column hero and the case-study body directly below. Section order is locked in §5.6.
+**Current version:** v6 (2026-07-29). The home template is **Case Study Hero** (§5.1) with PD101 in the two-column hero and the case-study body directly below. Section order is locked in §5.6.
 
 **If a design change conflicts with the guide:** update the guide first (bump the version, write a changelog entry at the top), then make the site match. Never drift silently.
+
+## Copy discipline (§3.7 of the brand guide) — READ THIS BEFORE WRITING PROSE
+
+Every descriptive claim on this site must trace back to one of two things:
+
+1. **Austin told me it's true**, in a session I can point to.
+2. **A source document says it's true** — this AGENTS.md, the brand guide, a confirmed case-study draft, a résumé, or a shipped feature I can verify by reading the code.
+
+If I can't point to either, **I don't write it.** Not on the site, not in a mockup, not in "placeholder" copy that ships to production because nobody swapped it out.
+
+**This rule applies in both directions:**
+
+- **Adding:** no invented stats, no fabricated outcomes, no aspirational status labels ("Draft in Figma," "In beta," "Coming soon" when nothing's actually coming), no product taglines Austin hasn't approved.
+- **Keeping:** when editing a section that already has prose, treat every existing sentence as suspect. Inherited scaffold copy is a common source of drift — it gets written once as filler, then gets "preserved" through refactors because nobody wanted to touch it. If I'm about to keep a sentence, I need to be able to say why it's true. If I can't, I flag it to Austin instead of silently shipping it forward.
+
+**Placeholder-hunt on entry.** The first time I touch any section in a session, I scan the *whole section* for `TODO(austin)`, invented stats, placeholder deks, and inherited scaffold copy. I flag those to Austin *before* I make my actual change — not after.
+
+**Pre-commit checkpoint.** Before I say "ready to commit and push," I list every piece of prose I changed *or preserved* in this session, one line each. Austin gets to veto anything that snuck in.
+
+Background: this rule was locked in 2026-07-29 after "Draft in Figma" survived from an old scaffold into a live page. Designed to make that failure mode structurally impossible to repeat.
 
 ## Sibling context
 
@@ -48,11 +68,13 @@ WCAG 2.1 AA minimum (§0.6). Every change should preserve:
 
 ## Placeholders currently in the repo
 
-Search for `TODO(austin)` in the source. Known placeholders:
-- Homepage article deks (`src/pages/index.astro`)
-- Third outcome stat (`6→8`)
+Search for `TODO(austin)` in the source. Known placeholders (as of 2026-07-29):
+- Homepage article deks (`src/pages/index.astro`) — flag before shipping
+- Third outcome stat slot on the PD101 case-study section — `6→8` was removed as unconfirmed; do **not** refill with a placeholder (per §3.7). Leave the slot out until a real, Austin-confirmed number lands.
 - LinkedIn URL and Résumé PDF href in `ContactCard`
-- Draft article at `src/content/writing/missions.mdx` (marked `draft: true`)
+- Draft article at `src/content/writing/missions.mdx` (marked `draft: true`) — the file is a scaffold; the real piece has not been written yet
+
+When you land in any of these files for a different reason, do the placeholder-hunt (above) and surface what you find.
 
 ## Build / verify
 
