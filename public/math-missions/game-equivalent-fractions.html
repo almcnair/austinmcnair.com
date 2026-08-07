@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Mission: Equivalent Fractions</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        spaceBg: '#040613',
+                        spaceCard: '#0D1127',
+                        cyanGlow: '#00F0FF',
+                        pinkGlow: '#FF007F',
+                        greenGlow: '#00FFA3',
+                        goldGlow: '#FFD700'
+                    },
+                    fontFamily: {
+                        orbitron: ['Orbitron', 'sans-serif'],
+                        inter: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #040613;
+            color: #E2E8F0;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        /* Clean dark space tank glass */
+        .tank-glass {
+            background: rgba(13, 17, 39, 0.9);
+            border: 1px solid rgba(0, 240, 255, 0.25);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+        }
+
+        /* Plasma fuel bar gradient */
+        .plasma-liquid {
+            background: linear-gradient(90deg, #00B2FE 0%, #00F0FF 60%, #00FFA3 100%);
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.6);
+            position: relative;
+        }
+
+        /* Interactive slice segment styling */
+        .tank-slice {
+            border-right: 1.5px solid rgba(0, 240, 255, 0.4);
+            transition: background-color 0.15s ease;
+            cursor: pointer;
+        }
+
+        .tank-slice:last-child {
+            border-right: none;
+        }
+
+        .tank-slice:hover {
+            background-color: rgba(0, 240, 255, 0.15);
+        }
+
+        /* Laser Beam Slice Line Effect */
+        .laser-beam {
+            position: absolute;
+            top: 0; bottom: 0;
+            width: 2px;
+            background: #FF007F;
+            box-shadow: 0 0 8px #FF007F, 0 0 12px #FF007F;
+            pointer-events: none;
+            z-index: 20;
+            animation: laserPulse 0.8s infinite alternate;
+        }
+
+        @keyframes laserPulse {
+            0% { opacity: 0.6; box-shadow: 0 0 4px #FF007F; }
+            100% { opacity: 1; box-shadow: 0 0 12px #FF007F, 0 0 18px #00F0FF; }
+        }
+
+        /* Screen Shake on Error */
+        .shake-screen {
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+            40%, 60% { transform: translate3d(6px, 0, 0); }
+        }
+
+        /* Slice selector buttons */
+        .btn-slice-opt {
+            background: rgba(13, 17, 39, 0.8);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            color: #94A3B8;
+            transition: all 0.2s ease;
+        }
+
+        .btn-slice-opt:hover {
+            background: rgba(0, 240, 255, 0.15);
+            color: #00F0FF;
+            border-color: #00F0FF;
+        }
+
+        .btn-slice-opt.active {
+            background: rgba(0, 240, 255, 0.25);
+            color: #00F0FF;
+            border-color: #00F0FF;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+            font-weight: bold;
+        }
+
+        /* Action Launch Button */
+        .btn-action-primary {
+            background: #00F0FF;
+            color: #040613;
+            font-weight: 800;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+            transition: all 0.2s ease;
+        }
+
+        .btn-action-primary:hover:not(:disabled) {
+            background: #00FFA3;
+            box-shadow: 0 0 25px rgba(0, 255, 163, 0.6);
+            transform: translateY(-1px);
+        }
+
+        /* Background Canvas overlay */
+        #bgCanvas {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col justify-between relative min-h-screen">
+
+    <canvas id="bgCanvas"></canvas>
+
+    <!-- MAIN APP CONTAINER -->
+    <div class="relative z-10 min-h-screen flex flex-col justify-between p-3 sm:p-6 max-w-5xl mx-auto w-full">
+
+        <!-- ================= TOP HUD BAR ================= -->
+        <header class="flex flex-wrap items-center justify-between gap-3 bg-[#0B0E1E]/90 border border-slate-800 rounded-xl px-4 py-2.5 backdrop-blur-md shadow-lg">
+            <!-- Home & Navigation -->
+            <div class="flex items-center gap-3">
+                <button onclick="resetGameSession()" class="flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold tracking-wider text-cyan-400 bg-cyan-950/40 border border-cyan-500/30 hover:bg-cyan-900/50 transition-colors">
+                    <i class="fa-solid fa-caret-left"></i> HOME
+                </button>
+                <div class="h-4 w-px bg-slate-700/60 hidden sm:block"></div>
+                <div class="text-xs sm:text-sm font-orbitron font-bold tracking-widest text-slate-200 uppercase">
+                    MATH MISSION: <span class="text-cyanGlow">EQUIVALENT FRACTIONS</span>
+                </div>
+            </div>
+
+            <!-- Stats Badge HUD -->
+            <div class="flex items-center gap-3 text-xs font-orbitron">
+                <!-- Sound Toggle -->
+                <button id="soundToggleBtn" onclick="toggleAudio()" class="px-2.5 py-1 rounded-md bg-slate-800/80 border border-slate-700 text-slate-300 hover:text-cyanGlow transition-colors" title="Toggle Sound FX">
+                    <i id="soundIcon" class="fa-solid fa-volume-high"></i>
+                </button>
+
+                <!-- Streak Badge -->
+                <div class="flex items-center gap-1.5 px-3 py-1 bg-amber-950/30 border border-amber-500/30 rounded-md text-amber-400">
+                    <i class="fa-solid fa-fire text-orange-500 animate-pulse"></i>
+                    <span id="streakVal">0</span> STREAK
+                </div>
+
+                <!-- Credits Badge -->
+                <div class="flex items-center gap-1.5 px-3 py-1 bg-cyan-950/30 border border-cyan-500/30 rounded-md text-cyan-300">
+                    <i class="fa-solid fa-gem text-cyan-400"></i>
+                    <span id="creditsVal">+0</span> CRD
+                </div>
+
+                <!-- Shields Badge -->
+                <div class="flex items-center gap-1 px-3 py-1 bg-indigo-950/30 border border-indigo-500/30 rounded-md text-indigo-300">
+                    <span id="shieldIcons" class="text-cyanGlow tracking-tighter">▲ ▲ ▲</span>
+                    <span class="hidden md:inline ml-1 text-[10px] text-slate-400">SHIELDS</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- LEVEL PROGRESS TIMELINE ROW -->
+        <div class="relative w-full my-3 flex items-center justify-between px-2">
+            <div class="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[1px] bg-slate-800 z-0"></div>
+            <div id="levelTimelineNodes" class="relative z-10 w-full flex justify-between items-center">
+                <!-- Injected via JavaScript -->
+            </div>
+        </div>
+
+        <!-- ================= MAIN MISSION CONTAINER ================= -->
+        <main class="my-auto flex-1 flex flex-col justify-center space-y-4">
+            
+            <!-- Mission Level Header -->
+            <div id="missionCardHeader" class="space-y-1">
+                <div class="flex items-center gap-2 text-xs font-orbitron tracking-widest text-cyan-400 uppercase">
+                    <span>✦</span>
+                    <span id="missionLevelTitle">MATH MISSION 1 · FUEL TANK FIX</span>
+                </div>
+                <h1 id="missionPromptText" class="text-xl sm:text-3xl font-extrabold text-white leading-tight">
+                    Goal: Fill your fuel tank to equal <span class="text-cyanGlow font-orbitron underline decoration-cyan-500/50">[ 2 / 3 ]</span> so the ship can start.
+                </h1>
+            </div>
+
+            <!-- Interactive Calibration Tank Deck -->
+            <div id="mainTankCard" class="tank-glass rounded-2xl p-4 sm:p-6 space-y-6 relative overflow-hidden">
+                
+                <!-- Equivalence Vertical Laser Alignment Line -->
+                <div id="verticalAlignGuide" class="hidden absolute top-0 bottom-0 w-0.5 bg-greenGlow z-30 pointer-events-none shadow-[0_0_12px_#00FFA3]">
+                    <div class="absolute top-2 -translate-x-1/2 bg-greenGlow text-black text-[10px] font-orbitron font-extrabold px-1.5 py-0.5 rounded shadow whitespace-nowrap">
+                        ✓ EQUIVALENT
+                    </div>
+                </div>
+
+                <!-- TANK 1: TARGET TANK (Reference) -->
+                <div class="space-y-1.5">
+                    <div class="flex items-center justify-between text-xs sm:text-sm font-orbitron">
+                        <span class="text-slate-400 flex items-center gap-2">
+                            <i class="fa-solid fa-bullseye text-pinkGlow"></i> TARGET TANK (Goal)
+                        </span>
+                        <span id="targetFractionDisplay" class="font-extrabold text-cyanGlow text-base sm:text-lg">
+                            2 / 3
+                        </span>
+                    </div>
+
+                    <!-- Target Tank Bar -->
+                    <div class="relative h-12 sm:h-14 w-full rounded-xl bg-slate-950 border border-slate-800 overflow-hidden flex shadow-inner">
+                        <div id="targetLiquidFill" class="plasma-liquid h-full transition-all duration-300" style="width: 66.666%;"></div>
+                        <div id="targetGridContainer" class="absolute inset-0 flex w-full h-full pointer-events-none">
+                            <!-- Target slices injected by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DYNAMIC LASER EQUATION PREVIEW -->
+                <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400 py-2 border-y border-slate-800/80">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-scissors text-pinkGlow"></i>
+                        <span>Slice each part into:</span>
+                        <!-- Simplified Slice Multiplier Buttons -->
+                        <div class="flex items-center gap-1.5 ml-1">
+                            <button onclick="selectMultiplier(1)" id="multBtn1" class="btn-slice-opt px-2.5 py-1 rounded text-xs font-orbitron">1x</button>
+                            <button onclick="selectMultiplier(2)" id="multBtn2" class="btn-slice-opt px-2.5 py-1 rounded text-xs font-orbitron">2x</button>
+                            <button onclick="selectMultiplier(3)" id="multBtn3" class="btn-slice-opt px-2.5 py-1 rounded text-xs font-orbitron">3x</button>
+                            <button onclick="selectMultiplier(4)" id="multBtn4" class="btn-slice-opt px-2.5 py-1 rounded text-xs font-orbitron">4x</button>
+                        </div>
+                    </div>
+
+                    <div id="mathEquationPreview" class="font-orbitron font-semibold text-slate-300">
+                        2/3 × <span class="text-pinkGlow">4/4</span> = <span class="text-cyanGlow">8/12</span>
+                    </div>
+                </div>
+
+                <!-- TANK 2: YOUR TANK (Clickable Progress Bar) -->
+                <div class="space-y-1.5">
+                    <div class="flex items-center justify-between text-xs sm:text-sm font-orbitron">
+                        <span class="text-slate-400 flex items-center gap-2">
+                            <i class="fa-solid fa-gas-pump text-cyanGlow"></i> YOUR TANK (Click tank to fill)
+                        </span>
+                        <span id="activeFractionDisplay" class="font-extrabold text-pinkGlow text-base sm:text-lg">
+                            0 / 12
+                        </span>
+                    </div>
+
+                    <!-- Your Tank Bar (Directly Clickable) -->
+                    <div id="yourTankChamber" class="relative h-14 sm:h-18 w-full rounded-xl bg-slate-950 border-2 border-cyan-500/50 overflow-hidden flex shadow-2xl cursor-pointer group">
+                        
+                        <!-- Liquid Fill Bar -->
+                        <div id="yourLiquidFill" class="plasma-liquid h-full transition-all duration-200" style="width: 0%;"></div>
+
+                        <!-- Interactive Clickable Slices Overlay -->
+                        <div id="yourGridContainer" class="absolute inset-0 flex w-full h-full z-10">
+                            <!-- Clickable slice divs injected dynamically by JS -->
+                        </div>
+                    </div>
+                    
+                    <p class="text-[11px] text-cyan-400/90 text-center font-medium pt-1">
+                        <i class="fa-solid fa-hand-pointer mr-1 animate-bounce"></i> Click anywhere on Your Tank above to fill or empty fuel!
+                    </p>
+                </div>
+
+                <!-- REAL-TIME STATUS MESSAGE -->
+                <div id="statusBanner" class="py-2 px-4 rounded-xl bg-slate-900 border border-slate-800 text-center transition-all duration-300">
+                    <span id="statusBannerText" class="text-xs sm:text-sm font-medium text-slate-300">
+                        Click on your tank to fill fuel and match the target level above.
+                    </span>
+                </div>
+
+            </div>
+
+        </main>
+
+        <!-- FOOTER / NAVIGATION STRIP -->
+        <footer class="mt-4 flex items-center justify-between text-xs font-orbitron pt-3 border-t border-slate-800/80">
+            <button onclick="prevLevel()" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors">
+                <i class="fa-solid fa-chevron-left text-[10px]"></i> PREVIOUS
+            </button>
+            <div class="text-slate-400 font-bold tracking-widest">
+                <span id="currentLevelNum" class="text-white">01</span> / <span id="totalLevelsNum" class="text-slate-500">05</span>
+            </div>
+            <button onclick="submitAnswer()" id="startShipBtn" class="btn-action-primary px-5 py-2.5 rounded-lg text-xs font-orbitron flex items-center gap-2 tracking-wider uppercase">
+                <span>START SHIP</span>
+                <i class="fa-solid fa-play text-[10px]"></i>
+            </button>
+        </footer>
+
+    </div>
+
+    <!-- ================= ROCKET LAUNCH SUCCESS MODAL ================= -->
+    <div id="successModal" class="fixed inset-0 bg-spaceBg/90 backdrop-blur-md z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-[#0D1127] border-2 border-cyanGlow rounded-2xl p-6 sm:p-8 max-w-md w-full text-center space-y-5 shadow-[0_0_50px_rgba(0,240,255,0.3)] transform scale-95 transition-transform duration-300 relative overflow-hidden" id="modalCard">
+            
+            <div class="w-16 h-16 mx-auto rounded-full bg-cyan-950/80 border-2 border-greenGlow flex items-center justify-center text-greenGlow text-3xl shadow-[0_0_20px_#00FFA3]">
+                <i class="fa-solid fa-shuttle-space animate-bounce"></i>
+            </div>
+
+            <div class="space-y-1">
+                <span class="text-xs font-orbitron font-extrabold text-greenGlow tracking-widest uppercase">THRUSTERS ENGAGED!</span>
+                <h2 class="text-2xl font-orbitron font-extrabold text-white">MATH MISSION CLEARED</h2>
+                <p id="modalEquationText" class="text-sm font-orbitron text-cyanGlow pt-1">2 / 3 = 8 / 12</p>
+            </div>
+
+            <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1.5 text-xs">
+                <div class="flex justify-between">
+                    <span class="text-slate-400">Mission Reward:</span>
+                    <span class="text-cyanGlow font-bold font-orbitron">+50 CRD</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-400">Streak Bonus:</span>
+                    <span class="text-amber-400 font-bold font-orbitron">+1 🔥</span>
+                </div>
+            </div>
+
+            <button onclick="nextLevel()" class="btn-action-primary w-full py-3 rounded-xl font-orbitron text-sm flex items-center justify-center gap-2">
+                <span>NEXT MATH MISSION</span>
+                <i class="fa-solid fa-arrow-right text-xs"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- ================= GAME STATE & LOGIC SCRIPT ================= -->
+    <script>
+        // Mission Data Configuration
+        const MISSIONS = [
+            {
+                id: 1,
+                targetNum: 2,
+                targetDenom: 3,
+                defaultMult: 4, // 2/3 = 8/12
+                promptGoal: "Fill your fuel tank to equal [ 2 / 3 ] so the ship can start."
+            },
+            {
+                id: 2,
+                targetNum: 3,
+                targetDenom: 4,
+                defaultMult: 2, // 3/4 = 6/8
+                promptGoal: "Fill your fuel tank to equal [ 3 / 4 ] so the ship can start."
+            },
+            {
+                id: 3,
+                targetNum: 1,
+                targetDenom: 2,
+                defaultMult: 5, // 1/2 = 5/10
+                promptGoal: "Fill your fuel tank to equal [ 1 / 2 ] so the ship can start."
+            },
+            {
+                id: 4,
+                targetNum: 3,
+                targetDenom: 5,
+                defaultMult: 3, // 3/5 = 9/15
+                promptGoal: "Fill your fuel tank to equal [ 3 / 5 ] so the ship can start."
+            },
+            {
+                id: 5,
+                targetNum: 4,
+                targetDenom: 6,
+                defaultMult: 2, // 4/6 = 8/12
+                promptGoal: "Fill your fuel tank to equal [ 4 / 6 ] so the ship can start."
+            }
+        ];
+
+        // Global State
+        let state = {
+            currentMissionIdx: 0,
+            multiplier: 4,
+            activeNumerator: 0,
+            streak: 0,
+            credits: 0,
+            shields: 3,
+            audioEnabled: true
+        };
+
+        // Web Audio Synthesizer (No external audio files needed!)
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioCtx();
+            }
+        }
+
+        function playBeep(freq = 440, type = 'sine', duration = 0.1) {
+            if (!state.audioEnabled) return;
+            try {
+                initAudio();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) {
+                console.log("Audio not allowed yet");
+            }
+        }
+
+        function playFillSound() {
+            playBeep(300 + (state.activeNumerator * 35), 'sine', 0.12);
+        }
+
+        function playSliceSound() {
+            playBeep(800, 'triangle', 0.08);
+        }
+
+        function playMatchSound() {
+            if (!state.audioEnabled) return;
+            try {
+                initAudio();
+                const now = audioCtx.currentTime;
+                [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.frequency.setValueAtTime(freq, now + (idx * 0.08));
+                    gain.gain.setValueAtTime(0.1, now + (idx * 0.08));
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + (idx * 0.08) + 0.25);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now + (idx * 0.08));
+                    osc.stop(now + (idx * 0.08) + 0.25);
+                });
+            } catch(e) {}
+        }
+
+        function playErrorSound() {
+            playBeep(180, 'sawtooth', 0.25);
+        }
+
+        function toggleAudio() {
+            state.audioEnabled = !state.audioEnabled;
+            const icon = document.getElementById('soundIcon');
+            icon.className = state.audioEnabled ? "fa-solid fa-volume-high" : "fa-solid fa-volume-xmark text-slate-500";
+        }
+
+        function getCurrentMission() {
+            return MISSIONS[state.currentMissionIdx];
+        }
+
+        // Render Level Progress Dots
+        function renderTimelineNodes() {
+            const container = document.getElementById('levelTimelineNodes');
+            container.innerHTML = '';
+            
+            MISSIONS.forEach((m, idx) => {
+                const node = document.createElement('div');
+                let colorClass = "w-2.5 h-2.5 rounded-full bg-slate-800 border border-slate-900";
+                if (idx === state.currentMissionIdx) {
+                    colorClass = "w-3.5 h-3.5 rounded-full bg-cyanGlow shadow-[0_0_10px_#00F0FF] border-2 border-white animate-pulse";
+                } else if (idx < state.currentMissionIdx) {
+                    colorClass = "w-2.5 h-2.5 rounded-full bg-pinkGlow shadow-[0_0_6px_#FF007F]";
+                }
+                node.className = colorClass;
+                container.appendChild(node);
+            });
+        }
+
+        // Load and Initialize Mission Level
+        function loadMission(idx) {
+            state.currentMissionIdx = idx;
+            const mission = getCurrentMission();
+
+            state.multiplier = mission.defaultMult || 4;
+            state.activeNumerator = 0;
+
+            const formattedNum = String(mission.id).padStart(2, '0');
+            const formattedTotal = String(MISSIONS.length).padStart(2, '0');
+
+            document.getElementById('currentLevelNum').innerText = formattedNum;
+            document.getElementById('totalLevelsNum').innerText = formattedTotal;
+            document.getElementById('missionLevelTitle').innerText = `MATH MISSION ${mission.id} · FUEL TANK FIX`;
+            
+            document.getElementById('missionPromptText').innerHTML = 
+                `Goal: Fill your fuel tank to equal <span class="text-cyanGlow font-orbitron underline decoration-cyan-500/50">[ ${mission.targetNum} / ${mission.targetDenom} ]</span> so the ship can start.`;
+
+            document.getElementById('targetFractionDisplay').innerText = `${mission.targetNum} / ${mission.targetDenom}`;
+
+            renderTimelineNodes();
+            renderTargetTank();
+            renderYourTank();
+            updateSliceButtonUI();
+            updateEquationAndStatus();
+
+            document.getElementById('verticalAlignGuide').classList.add('hidden');
+        }
+
+        // Render Target Tank Grid Slices
+        function renderTargetTank() {
+            const mission = getCurrentMission();
+            const fillPct = (mission.targetNum / mission.targetDenom) * 100;
+            document.getElementById('targetLiquidFill').style.width = `${fillPct}%`;
+
+            const gridContainer = document.getElementById('targetGridContainer');
+            gridContainer.innerHTML = '';
+
+            for (let i = 0; i < mission.targetDenom; i++) {
+                const slice = document.createElement('div');
+                slice.className = "flex-1 border-r border-slate-700/80 last:border-r-0 h-full";
+                gridContainer.appendChild(slice);
+            }
+        }
+
+        // Render Your Tank Grid Slices (Clickable directly on the progress bar)
+        function renderYourTank() {
+            const mission = getCurrentMission();
+            const totalSlices = mission.targetDenom * state.multiplier;
+            const fillPct = (state.activeNumerator / totalSlices) * 100;
+            
+            document.getElementById('yourLiquidFill').style.width = `${fillPct}%`;
+            document.getElementById('activeFractionDisplay').innerText = `${state.activeNumerator} / ${totalSlices}`;
+
+            const gridContainer = document.getElementById('yourGridContainer');
+            gridContainer.innerHTML = '';
+
+            for (let i = 0; i < totalSlices; i++) {
+                const slice = document.createElement('div');
+                slice.className = "flex-1 tank-slice h-full";
+                
+                // Clicking on a slice fills up to that slice index (or toggles off if clicking exact edge)
+                slice.onclick = (e) => {
+                    e.stopPropagation();
+                    const targetAmount = i + 1;
+                    if (state.activeNumerator === targetAmount) {
+                        state.activeNumerator = targetAmount - 1; // Trim 1 segment back
+                    } else {
+                        state.activeNumerator = targetAmount;
+                    }
+                    playFillSound();
+                    renderYourTank();
+                    updateEquationAndStatus();
+                };
+
+                gridContainer.appendChild(slice);
+            }
+        }
+
+        // Multiplier Selection (1x, 2x, 3x, 4x)
+        function selectMultiplier(m) {
+            state.multiplier = m;
+            state.activeNumerator = 0; // Reset fill on slice re-cut for clear feedback
+            playSliceSound();
+            updateSliceButtonUI();
+            renderYourTank();
+            updateEquationAndStatus();
+        }
+
+        function updateSliceButtonUI() {
+            [1, 2, 3, 4].forEach(val => {
+                const btn = document.getElementById(`multBtn${val}`);
+                if (btn) {
+                    if (val === state.multiplier) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                }
+            });
+        }
+
+        // Real-time Equation & Visual Match Checking
+        function updateEquationAndStatus() {
+            const mission = getCurrentMission();
+            const activeDenom = mission.targetDenom * state.multiplier;
+
+            document.getElementById('mathEquationPreview').innerHTML = 
+                `${mission.targetNum}/${mission.targetDenom} × <span class="text-pinkGlow">${state.multiplier}/${state.multiplier}</span> = <span class="text-cyanGlow">${mission.targetNum * state.multiplier}/${activeDenom}</span>`;
+
+            const targetRatio = mission.targetNum / mission.targetDenom;
+            const activeRatio = state.activeNumerator / activeDenom;
+
+            const guide = document.getElementById('verticalAlignGuide');
+            const statusText = document.getElementById('statusBannerText');
+            const startBtn = document.getElementById('startShipBtn');
+
+            if (state.activeNumerator > 0 && Math.abs(targetRatio - activeRatio) < 0.0001) {
+                // Exact Match
+                guide.classList.remove('hidden');
+                guide.style.left = `${targetRatio * 100}%`;
+                statusText.innerHTML = `<span class="text-greenGlow font-bold">MATCH FOUND!</span> ${mission.targetNum}/${mission.targetDenom} is equal to ${state.activeNumerator}/${activeDenom}. Click START SHIP!`;
+                startBtn.classList.add('animate-pulse');
+                playMatchSound();
+            } else {
+                guide.classList.add('hidden');
+                startBtn.classList.remove('animate-pulse');
+
+                if (state.activeNumerator === 0) {
+                    statusText.innerText = `Click anywhere on Your Tank to fill fuel until it matches the Target Tank above.`;
+                } else if (activeRatio < targetRatio) {
+                    statusText.innerHTML = `<span class="text-amber-400">Not enough fuel!</span> Click further right on the tank to add more fuel.`;
+                } else {
+                    statusText.innerHTML = `<span class="text-pinkGlow">Too much fuel!</span> Click further left on the tank to remove extra fuel.`;
+                }
+            }
+        }
+
+        // Submit / Check Answer
+        function submitAnswer() {
+            const mission = getCurrentMission();
+            const activeDenom = mission.targetDenom * state.multiplier;
+            const targetRatio = mission.targetNum / mission.targetDenom;
+            const activeRatio = state.activeNumerator / activeDenom;
+
+            if (state.activeNumerator > 0 && Math.abs(targetRatio - activeRatio) < 0.0001) {
+                // SUCCESS
+                state.streak += 1;
+                state.credits += 50;
+                
+                document.getElementById('streakVal').innerText = state.streak;
+                document.getElementById('creditsVal').innerText = `+${state.credits}`;
+                document.getElementById('modalEquationText').innerText = `${mission.targetNum} / ${mission.targetDenom} = ${state.activeNumerator} / ${activeDenom}`;
+
+                const modal = document.getElementById('successModal');
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                modal.querySelector('#modalCard').classList.remove('scale-95');
+                modal.querySelector('#modalCard').classList.add('scale-100');
+
+                playMatchSound();
+            } else {
+                // ERROR
+                playErrorSound();
+                const card = document.getElementById('mainTankCard');
+                card.classList.add('shake-screen');
+                setTimeout(() => card.classList.remove('shake-screen'), 400);
+
+                if (state.shields > 1) {
+                    state.shields -= 1;
+                    updateShieldsUI();
+                }
+            }
+        }
+
+        function updateShieldsUI() {
+            let icons = "";
+            for (let i = 0; i < 3; i++) {
+                icons += (i < state.shields) ? "▲ " : "△ ";
+            }
+            document.getElementById('shieldIcons').innerText = icons.trim();
+        }
+
+        function nextLevel() {
+            const modal = document.getElementById('successModal');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            
+            if (state.currentMissionIdx < MISSIONS.length - 1) {
+                loadMission(state.currentMissionIdx + 1);
+            } else {
+                // Restart to level 1 after completion
+                loadMission(0);
+            }
+        }
+
+        function prevLevel() {
+            if (state.currentMissionIdx > 0) {
+                loadMission(state.currentMissionIdx - 1);
+            }
+        }
+
+        function resetGameSession() {
+            state.streak = 0;
+            state.credits = 0;
+            state.shields = 3;
+            document.getElementById('streakVal').innerText = "0";
+            document.getElementById('creditsVal').innerText = "+0";
+            updateShieldsUI();
+            loadMission(0);
+        }
+
+        // Background Canvas Stars Animation
+        const canvas = document.getElementById('bgCanvas');
+        const ctx = canvas.getContext('2d');
+        let stars = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        function initBackgroundStars() {
+            resizeCanvas();
+            stars = [];
+            const colors = ['#FFFFFF', '#00F0FF', '#FF007F', '#CBD5E1'];
+            for (let i = 0; i < 90; i++) {
+                stars.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() * 1.4 + 0.3,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    alpha: Math.random() * 0.8 + 0.2,
+                    twinkleSpeed: Math.random() * 0.015 + 0.005
+                });
+            }
+        }
+
+        function animateBackground() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            stars.forEach((s) => {
+                s.alpha += s.twinkleSpeed;
+                if (s.alpha > 1 || s.alpha < 0.2) s.twinkleSpeed = -s.twinkleSpeed;
+
+                ctx.fillStyle = s.color;
+                ctx.globalAlpha = Math.max(0.1, Math.min(1, s.alpha));
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            requestAnimationFrame(animateBackground);
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        // Initialize App on Window Load
+        window.onload = function() {
+            initBackgroundStars();
+            animateBackground();
+            loadMission(0);
+        };
+    </script>
+</body>
+</html>

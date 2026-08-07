@@ -14,7 +14,12 @@ The brand + style guide is canonical. It lives at:
 ~/Desktop/austinmcnair.com/AUSTINMCNAIR_BRAND_AND_STYLE_GUIDE.md
 ```
 
-**Current version:** v6 (2026-07-29). The home template is **Case Study Hero** (§5.1) with PD101 in the two-column hero and the case-study body directly below. Section order is locked in §5.6.
+**Current version:** v9 (2026-08-07). The home template is **Case Study Hero** (§5.1) with PD101 in the two-column hero and the case-study body directly below. Section order is locked in §5.6.
+
+**v9 key rule (locked 2026-08-07): the two-accent color system.**
+- **Signal Cyan** = on-site interactive (reading links, focus rings, in-page navigation, same-tab CTAs, downloadable buttons on tool pages).
+- **Warm Signal (rose)** = standalone CTA affordance that launches a demo or opens external in a new window/tab (external buttons, demo cards, take-with-you blocks whose payoff is an external site).
+- **Inline external links in prose stay cyan.** Warm only kicks in for standalone click targets — buttons, cards, whole-block CTAs. See §4.2 affordance table and §7.6 for the External CTA / Demo Card component.
 
 **If a design change conflicts with the guide:** update the guide first (bump the version, write a changelog entry at the top), then make the site match. Never drift silently.
 

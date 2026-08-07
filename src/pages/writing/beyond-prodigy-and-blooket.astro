@@ -1,0 +1,523 @@
+---
+/**
+ * Beyond Prodigy and Blooket — Field Notes article.
+ *
+ * This page bypasses the standard content-collection template
+ * (`writing/[...slug].astro`) because it renders a rich, article-specific
+ * layout: hero product shot with browser chrome, inline product figures
+ * with browser chrome, custom article list, and a two-card demo section
+ * that links to the playable-mission HTML files in `public/math-missions/`.
+ *
+ * Body font override: Inter (site default for prose is Newsreader). Locked
+ * with Austin 2026-08-07 — Lexend tried and rejected as too elementary; Inter
+ * lands as accessible-neutral for a piece pitched to hiring managers.
+ *
+ * Warm-rose treatment on the demo section per v9 brand rule: cards + eyebrow
+ * launch external / new-window content, so they use --warm not --cyan. See
+ * AUSTINMCNAIR_BRAND_AND_STYLE_GUIDE.md §7.6.
+ */
+import Layout from '../../layouts/Layout.astro';
+
+const title = 'Beyond Prodigy and Blooket: Designing Solutions That Match Classroom Instruction';
+const dek = "My students love the games. They just don't teach the strategies we practice in class — so I built one that does.";
+const date = new Date('2026-08-07T00:00:00-05:00');
+const dateFmt = date.toLocaleDateString('en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+---
+
+<Layout title={`${title} — Austin McNair`} description={dek}>
+  <article class="mm-article">
+
+    <header class="mm-header">
+      <div class="mm-kicker">Field Notes</div>
+      <h1 class="mm-title">
+        Beyond Prodigy and Blooket: Designing Solutions That <em>Match Classroom Instruction</em>.
+      </h1>
+      <p class="mm-dek">{dek}</p>
+      <div class="mm-byline">
+        <span>By Austin McNair</span>
+        <span aria-hidden="true">·</span>
+        <time datetime={date.toISOString()}>{dateFmt}</time>
+        <span aria-hidden="true">·</span>
+        <span>~2 min read</span>
+      </div>
+    </header>
+
+    <figure class="mm-product-shot" aria-label="Math Missions title art">
+      <div class="mm-chrome" aria-hidden="true">
+        <span class="mm-dot"></span><span class="mm-dot"></span><span class="mm-dot"></span>
+        <span class="mm-url">mathmissions.org</span>
+      </div>
+      <img
+        src="/math-missions/images/hero.jpeg"
+        alt="Math Missions title art: a spacecraft flying through a colorful nebula surrounded by planets, with the MathMissions wordmark in blue."
+      />
+      <span class="mm-shot-caption">Live · mathmissions.org</span>
+    </figure>
+
+    <div class="mm-prose">
+      <p>
+        My middle school diverse learners love playing popular math games like
+        <a href="https://prodigy.com" target="_blank" rel="noopener">Prodigy</a> or
+        <a href="https://blooket.com" target="_blank" rel="noopener">Blooket</a>. As their teacher,
+        I quickly noticed a major flaw: <em>unfamiliar strategies</em>.
+      </p>
+
+      <p>
+        During skill practice with ratios or dividing fractions, these sites push
+        solution steps that conflict with my classroom instruction. Unfamiliar
+        methods cause confusion — forcing my students to guess new approaches
+        rather than apply the scaffolded steps we practiced, like <em>Keep-Change-Flip</em>
+        or ratio tables.
+      </p>
+
+      <p>
+        To close this gap, I built
+        <a href="https://mathmissions.org" target="_blank" rel="noopener">MathMissions.org</a>
+        — a platform delivering engaging gameplay built strictly around my daily strategies.
+      </p>
+
+      <figure class="mm-inline-figure">
+        <div class="mm-product-shot mm-product-shot-inline">
+          <div class="mm-chrome" aria-hidden="true">
+            <span class="mm-dot"></span><span class="mm-dot"></span><span class="mm-dot"></span>
+            <span class="mm-url">mathmissions.org/play/ratios-lab-v1</span>
+          </div>
+          <img
+            src="/math-missions/images/screenshot-console.jpeg"
+            alt="Math Missions screenshot: 'Mission 3: Ratios: The Cosmic Fuel Lab' showing an Ingredients Lab with cup sliders, a central beaker showing a 'Too fizzy' error state, and a Ratio Telemetry panel comparing a target 2:1 ratio to the current mixture."
+          />
+          <span class="mm-shot-caption">Live · Ratios: The Cosmic Fuel Lab</span>
+        </div>
+        <figcaption>
+          The Cosmic Fuel Lab mirrors ratio-table practice: change one cup at a
+          time, watch the target, adjust. The strategy from class is the strategy
+          on screen.
+        </figcaption>
+      </figure>
+
+      <p>
+        A clean, dark-mode layout cuts visual noise, keeps my students focused on
+        one skill at a time:
+      </p>
+
+      <ul class="mm-article-list">
+        <li>
+          <strong>Consistent Methods</strong>
+          Problems match my exact instruction, eliminating mixed signals.
+        </li>
+        <li>
+          <strong>Targeted Rewards</strong>
+          Correct steps unlock power-ups and narrative progress without
+          distracting my students from the math.
+        </li>
+      </ul>
+
+      <figure class="mm-inline-figure">
+        <div class="mm-product-shot mm-product-shot-inline">
+          <div class="mm-chrome" aria-hidden="true">
+            <span class="mm-dot"></span><span class="mm-dot"></span><span class="mm-dot"></span>
+            <span class="mm-url">mathmissions.org/play/equivalent-fractions-v1</span>
+          </div>
+          <img
+            src="/math-missions/images/equivalent-fractions.jpeg"
+            alt="Math Missions screenshot: 'Mission 2: Equivalent Fractions: Fuel Tank Fix' showing a target tank at one-half, multiplier buttons with 3x selected, and the student's tank filled to three-sixths, with a 'Match Found — 1/2 = 3/6' confirmation."
+          />
+          <span class="mm-shot-caption">Live · Equivalent Fractions: Fuel Tank Fix</span>
+        </div>
+        <figcaption>
+          One problem, one strategy, one confirmation. The reward for a correct
+          step is the next step — not a leaderboard.
+        </figcaption>
+      </figure>
+
+      <p>
+        By aligning a web-based solution directly to my classroom scaffolds,
+        MathMissions.org removes strategy barriers, unlocks the general education
+        curriculum, and leaves my students feeling accomplished and rewarded.
+      </p>
+    </div>
+
+    <section class="mm-demo-section" aria-labelledby="mm-demo-heading">
+      <header class="mm-demo-header">
+        <div class="mm-demo-eyebrow">Demo · Try it yourself</div>
+        <h2 id="mm-demo-heading">Two live missions, no sign-in required.</h2>
+        <p>
+          Both missions run in your browser. Click either card to open the mission
+          in a new tab and solve a few problems the way a sixth-grader would.
+        </p>
+      </header>
+
+      <div class="mm-demo-grid">
+        <a
+          class="mm-game-card"
+          href="/math-missions/game-ratios.html"
+          target="_blank"
+          rel="noopener"
+          aria-label="Play Ratios: The Basics in a new tab"
+        >
+          <img
+            class="mm-thumb"
+            src="/math-missions/images/screenshot-console.jpeg"
+            alt="Cosmic Fuel Lab console showing a 2:1 fuel-to-oxidizer ratio target with a slider and progress readout"
+            loading="lazy"
+          />
+          <div class="mm-card-body">
+            <h3>Ratios: The Basics</h3>
+            <p class="mm-card-subhead">Mix fuel to match a target ratio — 2:1, 1:2, then scale to 6 cups.</p>
+            <span class="mm-play-cta">Play the mission <span class="mm-arrow">↗</span></span>
+          </div>
+        </a>
+
+        <a
+          class="mm-game-card"
+          href="/math-missions/game-equivalent-fractions.html"
+          target="_blank"
+          rel="noopener"
+          aria-label="Play Equivalent Fractions: Fuel Tank Fix in a new tab"
+        >
+          <img
+            class="mm-thumb"
+            src="/math-missions/images/equivalent-fractions.jpeg"
+            alt="Equivalent Fractions fuel-tank interface showing a target tank filled to 2/3 next to an empty player tank cut into sixths"
+            loading="lazy"
+          />
+          <div class="mm-card-body">
+            <h3>Equivalent Fractions: Fuel Tank Fix</h3>
+            <p class="mm-card-subhead">Match target tanks by picking a multiplier and filling equivalent slices.</p>
+            <span class="mm-play-cta">Play the mission <span class="mm-arrow">↗</span></span>
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <a href="/#writing" class="mm-back">← Back to writing</a>
+
+  </article>
+</Layout>
+
+<style>
+  /* Scoped to .mm-article so nothing here leaks into other articles or the site. */
+
+  .mm-article {
+    max-width: var(--content-max);
+    margin: 0 auto;
+    padding: 72px var(--edge-pad) 96px;
+    /* Body font override per §4.3 note added v9: this article uses Inter body
+       because the piece itself argues for accessible design. All display
+       type still uses Newsreader. */
+    font-family: var(--font-sans);
+    font-size: 18px;
+    line-height: 1.7;
+    color: var(--text);
+  }
+
+  /* ---------- Header ---------- */
+  .mm-header {
+    margin-bottom: 40px;
+  }
+  .mm-kicker {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--warm);
+    margin-bottom: 24px;
+  }
+  .mm-title {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: clamp(36px, 5vw, 56px);
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin: 0 0 24px;
+  }
+  .mm-title em {
+    font-style: italic;
+    color: var(--cyan);
+    font-weight: 500;
+  }
+  .mm-dek {
+    font-family: var(--font-sans);
+    font-size: 21px;
+    line-height: 1.5;
+    color: var(--text-dim);
+    margin: 0 0 32px;
+    max-width: 44ch;
+    font-weight: 400;
+  }
+  .mm-byline {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    color: var(--text-faint);
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  /* ---------- Product shots with browser chrome ---------- */
+  .mm-product-shot {
+    position: relative;
+    margin: 8px 0 56px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    background: #0b0f27;
+    box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.6);
+  }
+  .mm-product-shot-inline {
+    margin: 0;
+  }
+  .mm-chrome {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: linear-gradient(180deg, #0f1330 0%, #0b0f27 100%);
+    border-bottom: 1px solid var(--line);
+  }
+  .mm-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--line);
+  }
+  .mm-url {
+    margin-left: 10px;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    color: var(--text-faint);
+    letter-spacing: 0.02em;
+  }
+  .mm-product-shot img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .mm-shot-caption {
+    position: absolute;
+    bottom: 14px;
+    left: 14px;
+    font-family: var(--font-display, 'Chakra Petch'), sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--cyan);
+    background: rgba(9, 12, 31, 0.72);
+    border: 1px solid rgba(34, 211, 238, 0.4);
+    border-radius: 999px;
+    padding: 6px 12px;
+    backdrop-filter: blur(4px);
+  }
+
+  /* ---------- Prose ---------- */
+  .mm-prose p {
+    margin: 0 0 1.35em;
+    font-family: var(--font-sans);
+    font-size: 18px;
+    line-height: 1.7;
+    color: var(--text);
+  }
+  .mm-prose em { font-style: italic; }
+  .mm-prose strong { font-weight: 600; color: var(--text); }
+  .mm-prose a {
+    color: var(--cyan);
+    border-bottom: 1px solid rgba(34, 211, 238, 0.4);
+    text-decoration: none;
+    padding-bottom: 1px;
+    transition: border-color 180ms ease;
+  }
+  .mm-prose a:hover { border-bottom-color: var(--cyan); }
+
+  /* ---------- Inline figures ---------- */
+  .mm-inline-figure {
+    margin: 40px 0 48px;
+  }
+  .mm-inline-figure figcaption {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    color: var(--text-faint);
+    margin-top: 14px;
+    line-height: 1.6;
+    padding-left: 14px;
+    border-left: 2px solid var(--line);
+    max-width: 62ch;
+  }
+
+  /* ---------- Article list ---------- */
+  .mm-article-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.6em;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .mm-article-list li {
+    position: relative;
+    padding-left: 26px;
+    line-height: 1.6;
+    font-family: var(--font-sans);
+    font-size: 18px;
+    color: var(--text);
+  }
+  .mm-article-list li::before {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 0.72em;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--cyan);
+    box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.18);
+  }
+  .mm-article-list li strong {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin-bottom: 4px;
+  }
+
+  /* ---------- Demo section (warm-rose, per v9 brand rule) ---------- */
+  .mm-demo-section {
+    margin: 72px 0 24px;
+  }
+  .mm-demo-header {
+    padding-bottom: 20px;
+    margin-bottom: 28px;
+    border-bottom: 1px solid var(--line);
+  }
+  .mm-demo-eyebrow {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--warm);
+    margin-bottom: 10px;
+  }
+  .mm-demo-header h2 {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: 32px;
+    line-height: 1.2;
+    margin: 0 0 10px;
+    color: var(--text);
+  }
+  .mm-demo-header p {
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--text-dim);
+    margin: 0;
+  }
+  .mm-demo-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+  @media (max-width: 720px) {
+    .mm-demo-grid { grid-template-columns: 1fr; gap: 20px; }
+  }
+
+  /* Card: warm rose per v9 (§7.6 Card variant). Explicit border-bottom reset
+     prevents any inherited inline-link underline treatment from painting a
+     cyan strip across the bottom edge. */
+  .mm-game-card,
+  .mm-game-card:hover {
+    text-decoration: none;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 0;
+  }
+  .mm-game-card {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--warm);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--panel);
+    box-shadow: 0 12px 30px -18px rgba(0, 0, 0, 0.6);
+    transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+  }
+  .mm-game-card:hover {
+    transform: translateY(-2px);
+    border-top-color: var(--warm);
+    border-right-color: var(--warm);
+    border-bottom-color: var(--warm);
+    border-left-color: var(--warm);
+    box-shadow: 0 24px 45px -20px rgba(236, 93, 158, 0.35);
+  }
+  .mm-game-card:focus-visible {
+    outline: 2px solid var(--warm);
+    outline-offset: 3px;
+  }
+  .mm-thumb {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    background: #0b0f27;
+    border-bottom: 1px solid var(--line);
+  }
+  .mm-card-body {
+    padding: 20px 22px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+  }
+  .mm-game-card h3 {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: 22px;
+    line-height: 1.3;
+    color: var(--warm);
+    margin: 0;
+  }
+  .mm-card-subhead {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    color: var(--text-faint);
+    letter-spacing: 0.02em;
+    margin: 0 0 14px;
+  }
+  .mm-play-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.02em;
+    color: var(--warm);
+    align-self: flex-start;
+    margin-top: auto;
+  }
+  .mm-arrow { transition: transform 220ms ease; }
+  .mm-game-card:hover .mm-arrow { transform: translate(2px, -2px); }
+
+  /* ---------- Back link ---------- */
+  .mm-back {
+    display: inline-block;
+    margin-top: 64px;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-dim);
+    border-bottom: none;
+    text-decoration: none;
+  }
+  .mm-back:hover { color: var(--cyan); }
+</style>
