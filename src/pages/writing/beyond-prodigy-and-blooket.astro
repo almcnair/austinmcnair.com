@@ -116,6 +116,19 @@ const dateFmt = date.toLocaleDateString('en-US', {
         </li>
       </ul>
 
+      <figure class="mm-portrait-figure">
+        <img
+          src="/math-missions/images/pilot-vega.jpeg"
+          alt="Pilot Vega, a Math Missions character: a young cadet in a dark blue flight uniform with cyan and magenta accents, standing on the bridge of a spacecraft with control panels and a viewport showing a planet in the distance."
+        />
+        <figcaption>
+          Pilot Vega, Math Missions cadet. The story runs alongside the math —
+          a mission has a narrator, an objective, and a person to solve
+          alongside, so the practice feels like something you're doing, not
+          something being done to you.
+        </figcaption>
+      </figure>
+
       <figure class="mm-inline-figure">
         <div class="mm-product-shot mm-product-shot-inline">
           <div class="mm-chrome" aria-hidden="true">
@@ -348,6 +361,41 @@ const dateFmt = date.toLocaleDateString('en-US', {
     padding-left: 14px;
     border-left: 2px solid var(--line);
     max-width: 62ch;
+  }
+
+  /* ---------- Portrait figure (Pilot Vega, character art) ---------- */
+  .mm-portrait-figure {
+    margin: 40px 0 48px;
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+  .mm-portrait-figure img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    box-shadow: 0 20px 40px -18px rgba(0, 0, 0, 0.6);
+  }
+  .mm-portrait-figure figcaption {
+    font-family: var(--font-sans);
+    font-size: 15px;
+    color: var(--text-dim);
+    line-height: 1.6;
+    padding-left: 16px;
+    border-left: 2px solid var(--warm);
+    align-self: center;
+  }
+  @media (max-width: 720px) {
+    .mm-portrait-figure {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    .mm-portrait-figure img {
+      max-width: 260px;
+    }
   }
 
   /* ---------- Article list ---------- */
