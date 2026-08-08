@@ -66,32 +66,32 @@ const projects = [
 ---
 
 <Layout title="Austin McNair — Special Ed Teacher · Product Designer">
-  <section class="hero">
-    <div class="hero-copy">
-      <div class="kicker">Case Study · Classroom tool</div>
-      <h1>I built <em>a live progress dashboard</em> for my special education classroom.</h1>
-      <p class="dek">
-        A custom tool for logging IEP goal progress, independence, and interventions in the thirty
-        seconds between transitions — then rolling every entry into per-student analytics I can
-        drop straight into a progress report.
-      </p>
-      <div class="cta-row">
-        <a href="#pm-dashboard" class="btn">Read the case study →</a>
-        <a href="#writing" class="btn ghost">Or read the writing</a>
+  <section class="hero hero-framed">
+    <div class="hero-card">
+      <div class="hero-copy">
+        <div class="kicker">Field Notes · Instructional tool</div>
+        <h1>Beyond Prodigy and Blooket: designing solutions that <em>match classroom instruction</em>.</h1>
+        <p class="dek">
+          My middle school diverse learners love playing popular math games like Prodigy or Blooket. As their teacher, I quickly noticed a major flaw: <em>unfamiliar strategies</em>…
+        </p>
+        <div class="cta-row">
+          <a href="/writing/beyond-prodigy-and-blooket" class="btn">Read the article →</a>
+          <a href="https://mathmissions.org" target="_blank" rel="noopener" class="btn ghost">Or launch mathmissions.org ↗</a>
+        </div>
       </div>
-    </div>
 
-    <ProductShot
-      src="/img/pm-dashboard/dashboard-full.png"
-      alt="Progress Monitoring Dashboard overview: a class roster with per-student cards showing goal progress, independence, and intervention state at a glance."
-      url="dashboard · overview"
-      caption="Live · Classroom tool"
-      eager={true}
-    />
+      <ProductShot
+        src="/math-missions/images/hero.jpeg"
+        alt="Math Missions title art: a spacecraft flying through a colorful nebula surrounded by planets, with the MathMissions wordmark."
+        url="mathmissions.org"
+        caption="Live · mathmissions.org"
+        eager={true}
+      />
+    </div>
   </section>
 
   <section id="pm-dashboard" class="case-study">
-    <div class="eyebrow">The Flagship</div>
+    <div class="eyebrow">Case Study · Classroom tool</div>
     <h2 class="section-h">Progress Monitoring Dashboard — IEP data, in the moment.</h2>
 
     <div class="case-body">
@@ -287,6 +287,36 @@ const projects = [
     flex-wrap: wrap;
   }
 
+  /* HERO — framed variant (case-study teaser card) */
+  .hero-framed {
+    display: block;
+    padding: 72px var(--edge-pad);
+  }
+  .hero-framed .hero-card {
+    display: grid;
+    grid-template-columns: 1.05fr 1fr;
+    gap: 56px;
+    align-items: center;
+    padding: 56px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background:
+      radial-gradient(120% 100% at 100% 0%, rgba(34, 211, 238, 0.10) 0%, rgba(34, 211, 238, 0) 55%),
+      linear-gradient(180deg, #0d1229 0%, #0a0d22 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-framed .hero-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 56px;
+    right: 56px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--cyan) 30%, var(--cyan) 70%, transparent);
+    opacity: 0.35;
+  }
+
   /* CASE STUDY BODY */
   .case-body {
     max-width: var(--content-max);
@@ -364,6 +394,18 @@ const projects = [
       grid-template-columns: 1fr;
       gap: 48px;
       padding: 56px var(--edge-pad) 40px;
+    }
+    .hero-framed {
+      padding: 40px var(--edge-pad);
+    }
+    .hero-framed .hero-card {
+      grid-template-columns: 1fr;
+      gap: 40px;
+      padding: 32px;
+    }
+    .hero-framed .hero-card::before {
+      left: 32px;
+      right: 32px;
     }
     .outcomes { grid-template-columns: 1fr; gap: 20px; }
   }
