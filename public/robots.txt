@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /r/
+
+Sitemap: https://austinmcnair.com/sitemap-index.xml
