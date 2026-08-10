@@ -1,19 +1,35 @@
 ---
-const links = [
-  { href: '/#work', label: 'Work' },
-  { href: '/#writing', label: 'Writing' },
-  { href: '/#resources', label: 'Resources' },
-  { href: '/#about', label: 'About' },
-  { href: '/#contact', label: 'Contact' },
+const resources = [
+  { href: '/tools/brain-breaks/', label: 'Brain Breaks Wheel' },
+  { href: '/tools/jeopardy/', label: 'Jeopardy Builder' },
 ];
 ---
 
 <nav class="site-nav" aria-label="Primary">
   <a href="/" class="wordmark" aria-label="Austin McNair — home">Austin McNair</a>
   <ul class="links">
-    {links.map((l) => (
-      <li><a href={l.href}>{l.label}</a></li>
-    ))}
+    <li><a href="/#work">Work</a></li>
+    <li><a href="/#writing">Writing</a></li>
+    <li class="has-menu">
+      <button
+        type="button"
+        class="menu-trigger"
+        aria-haspopup="true"
+        aria-expanded="false"
+        aria-controls="resources-menu"
+        data-resources-trigger
+      >
+        Resources
+        <span class="caret" aria-hidden="true">▾</span>
+      </button>
+      <ul id="resources-menu" class="menu" role="menu" data-resources-menu hidden>
+        {resources.map((r) => (
+          <li role="none"><a role="menuitem" href={r.href}>{r.label}</a></li>
+        ))}
+      </ul>
+    </li>
+    <li><a href="/#about">About</a></li>
+    <li><a href="/#contact">Contact</a></li>
   </ul>
   <a
     href="/austin-mcnair-resume.pdf"
@@ -70,7 +86,9 @@ const links = [
     list-style: none;
     padding: 0;
     margin: 0 auto 0 40px;
+    align-items: center;
   }
+  .links > li { position: relative; }
   .links a {
     color: var(--text-dim);
     font-family: var(--font-sans);
@@ -80,6 +98,91 @@ const links = [
     border: none;
   }
   .links a:hover { color: var(--text); }
+
+  /* --- Resources dropdown --- */
+  .menu-trigger {
+    appearance: none;
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+    color: var(--text-dim);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.15s ease;
+  }
+  .menu-trigger:hover,
+  .menu-trigger[aria-expanded='true'] { color: var(--text); }
+  .menu-trigger:focus-visible {
+    outline: 2px solid var(--cyan);
+    outline-offset: 4px;
+    border-radius: 2px;
+  }
+  .caret {
+    font-size: 10px;
+    line-height: 1;
+    transform: translateY(1px);
+    transition: transform 0.15s ease;
+  }
+  .menu-trigger[aria-expanded='true'] .caret { transform: translateY(1px) rotate(180deg); }
+
+  .menu {
+    position: absolute;
+    top: calc(100% + 14px);
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 220px;
+    background: var(--panel);
+    border: 1px solid var(--cyan);
+    border-radius: 6px;
+    padding: 6px;
+    list-style: none;
+    margin: 0;
+    box-shadow:
+      0 20px 60px rgba(0, 0, 0, 0.6),
+      0 0 0 3px rgba(34, 211, 238, 0.12);
+  }
+  .menu::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+    width: 10px;
+    height: 10px;
+    background: var(--panel);
+    border-top: 1px solid var(--cyan);
+    border-left: 1px solid var(--cyan);
+  }
+  .menu[hidden] { display: none; }
+  .menu li { margin: 0; }
+  .menu a {
+    display: block;
+    padding: 10px 14px;
+    border-radius: 4px;
+    color: var(--text-dim);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .menu a:hover,
+  .menu a:focus-visible {
+    background: rgba(34, 211, 238, 0.12);
+    color: var(--cyan);
+    outline: none;
+  }
+  .menu a:focus-visible {
+    box-shadow: inset 0 0 0 1px var(--cyan);
+  }
 
   .resume-cta {
     display: inline-flex;
@@ -117,6 +220,7 @@ const links = [
   @media (max-width: 720px) {
     .site-nav { padding: 12px 20px; gap: 12px; }
     .links { display: none; }
+    .menu { position: static; transform: none; }
     .resume-cta {
       padding: 8px 14px;
       font-size: 12px;
@@ -132,3 +236,83 @@ const links = [
     }
   }
 </style>
+
+<script is:inline>
+  (function () {
+    const trigger = document.querySelector('[data-resources-trigger]');
+    const menu = document.querySelector('[data-resources-menu]');
+    if (!trigger || !menu) return;
+
+    const parentLi = trigger.parentElement;
+    let hoverOpenTimer = null;
+    let hoverCloseTimer = null;
+
+    function open() {
+      trigger.setAttribute('aria-expanded', 'true');
+      menu.hidden = false;
+    }
+    function close() {
+      trigger.setAttribute('aria-expanded', 'false');
+      menu.hidden = true;
+    }
+    function isOpen() { return trigger.getAttribute('aria-expanded') === 'true'; }
+
+    // Click on the trigger toggles.
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (isOpen()) close(); else open();
+    });
+
+    // Hover-to-open on desktop only.
+    const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    if (canHover && parentLi) {
+      parentLi.addEventListener('mouseenter', () => {
+        clearTimeout(hoverCloseTimer);
+        hoverOpenTimer = setTimeout(open, 80);
+      });
+      parentLi.addEventListener('mouseleave', () => {
+        clearTimeout(hoverOpenTimer);
+        hoverCloseTimer = setTimeout(close, 200);
+      });
+    }
+
+    // Click outside closes.
+    document.addEventListener('click', (e) => {
+      if (!isOpen()) return;
+      if (!parentLi.contains(e.target)) close();
+    });
+
+    // Escape closes and refocuses the trigger.
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && isOpen()) {
+        close();
+        trigger.focus();
+      }
+    });
+
+    // Arrow-down from the trigger moves focus into the menu.
+    trigger.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (!isOpen()) open();
+        const firstItem = menu.querySelector('a');
+        if (firstItem) firstItem.focus();
+      }
+    });
+
+    // Arrow-up/down navigation inside the menu.
+    menu.addEventListener('keydown', (e) => {
+      const items = Array.from(menu.querySelectorAll('a'));
+      const idx = items.indexOf(document.activeElement);
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const next = items[(idx + 1) % items.length];
+        if (next) next.focus();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const prev = items[(idx - 1 + items.length) % items.length];
+        if (prev) prev.focus();
+      }
+    });
+  })();
+</script>

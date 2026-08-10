@@ -1,0 +1,1740 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+const title = 'Jeopardy Game Creator — Austin McNair';
+const description =
+  'A free, browser-based Jeopardy game builder for K–12 teachers. No login. No accounts. Build a 25-question review board and download a single .html file that runs on any classroom projector offline.';
+---
+
+<Layout title={title} description={description}>
+  <section class="tool">
+    <div class="wrap">
+      <header class="tool-header">
+        <div class="eyebrow">Teacher tool · Free · No account</div>
+        <h1>A Jeopardy builder <em>for your classroom.</em></h1>
+        <p class="dek">
+          Type in your clues, click Download, and walk away with a single <code>.html</code> file that runs on
+          any classroom projector without internet. Five categories, twenty-five questions, one Daily Double.
+          Nothing to install. Nothing to sign up for.
+        </p>
+      </header>
+
+      <div class="controlbar">
+        <label class="titleField">
+          <span class="titleFieldLabel">Game title</span>
+          <input
+            id="gameTitleInput"
+            type="text"
+            placeholder="Untitled Jeopardy game"
+            autocomplete="off"
+            spellcheck="true"
+          />
+        </label>
+        <div class="progress" aria-live="polite">
+          <span class="progressCount" id="progressCount">0 / 25</span>
+          <span class="progressLabel">questions filled</span>
+        </div>
+        <div class="controlbarBtns">
+          <button class="btn ghost" id="importBtn" type="button">Import JSON</button>
+          <button class="btn ghost" id="exportJsonBtn" type="button">Copy JSON</button>
+          <button class="btn ghost danger" id="clearBtn" type="button">Clear board</button>
+        </div>
+      </div>
+
+      <div class="boardWrap">
+        <div
+          class="board"
+          id="board"
+          role="grid"
+          aria-label="Jeopardy game board, 5 categories by 5 point levels"
+        ></div>
+      </div>
+
+      <section class="artifact" aria-labelledby="artifactLabel">
+        <div class="artifactLabel" id="artifactLabel">Artifact</div>
+        <h2 class="artifactTitle">Download your game</h2>
+        <p class="artifactCopy">
+          One <code>.html</code> file. Runs offline on any classroom projector — no internet, no accounts, no
+          ads. Save it to a USB stick or drop it on your desktop.
+        </p>
+        <button class="btn warm" id="downloadBtn" type="button">
+          Download game <span class="arrow" aria-hidden="true">↗</span>
+        </button>
+      </section>
+
+    </div>
+  </section>
+
+  <!-- ============ Q&A modal ============ -->
+  <div class="modalBackdrop" id="modalBackdrop" hidden>
+    <div
+      class="modal"
+      id="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modalTitle"
+    >
+      <div class="modalHead">
+        <div>
+          <div class="modalKicker" id="modalKicker">Category · $200</div>
+          <h3 class="modalTitle" id="modalTitle">Edit clue</h3>
+        </div>
+        <button class="iconBtn" id="modalCloseBtn" type="button" aria-label="Close without saving">✕</button>
+      </div>
+      <div class="modalBody">
+        <label class="field">
+          <span class="fieldLabel">Clue</span>
+          <textarea
+            id="clueInput"
+            rows="3"
+            placeholder="This organelle is often called the powerhouse of the cell."
+            spellcheck="true"
+          ></textarea>
+        </label>
+        <label class="field">
+          <span class="fieldLabel">Answer</span>
+          <textarea
+            id="answerInput"
+            rows="2"
+            placeholder="What is the Mitochondria?"
+            spellcheck="true"
+          ></textarea>
+        </label>
+        <label class="ddToggle">
+          <input type="checkbox" id="ddInput" />
+          <span class="ddToggleUi" aria-hidden="true"></span>
+          <span class="ddToggleLabel">Mark as Daily Double</span>
+        </label>
+        <p class="ddNote" id="ddNote">Only one clue per board can be the Daily Double.</p>
+      </div>
+      <div class="modalFoot">
+        <button class="btn ghost" id="modalCancelBtn" type="button">Cancel</button>
+        <button class="btn ghost" id="modalSaveNextBtn" type="button">Save &amp; Next</button>
+        <button class="btn" id="modalSaveBtn" type="button">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ Import JSON modal ============ -->
+  <div class="modalBackdrop" id="importBackdrop" hidden>
+    <div
+      class="modal wide"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="importTitle"
+    >
+      <div class="modalHead">
+        <div>
+          <div class="modalKicker">Import</div>
+          <h3 class="modalTitle" id="importTitle">Paste a game file (JSON)</h3>
+        </div>
+        <button class="iconBtn" id="importCloseBtn" type="button" aria-label="Close">✕</button>
+      </div>
+      <div class="modalBody">
+        <textarea
+          id="importArea"
+          rows="14"
+          spellcheck="false"
+          placeholder='{ "title": "…", "categories": [ … ] }'
+        ></textarea>
+        <p class="ddNote" id="importNote">Paste a JSON export from this tool. Import replaces the current board.</p>
+      </div>
+      <div class="modalFoot">
+        <button class="btn ghost" id="importCancelBtn" type="button">Cancel</button>
+        <button class="btn" id="importConfirmBtn" type="button">Replace board</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- toast -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</Layout>
+
+<style>
+  /* ================= tokens ================= */
+  .tool {
+    --cell-radius: 6px;
+    --focus: 2px solid var(--cyan);
+  }
+
+  .wrap {
+    max-width: var(--site-max);
+    margin: 0 auto;
+    padding: 64px var(--edge-pad) 96px;
+  }
+  @media (max-width: 720px) {
+    .wrap { padding: 40px var(--edge-pad) 72px; }
+  }
+
+  /* ================= header block (§5.5) ================= */
+  .tool-header {
+    max-width: var(--content-max);
+    margin: 0 auto 56px;
+  }
+  .eyebrow {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 24px;
+  }
+  .eyebrow::before {
+    content: '';
+    width: 28px; height: 1px;
+    background: var(--text-faint);
+  }
+  h1 {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: clamp(38px, 5.4vw, 58px);
+    letter-spacing: -0.02em;
+    line-height: 1.08;
+    margin: 0 0 20px;
+    color: var(--text);
+  }
+  h1 em {
+    font-style: italic;
+    color: var(--cyan);
+  }
+  .dek {
+    font-family: var(--font-serif);
+    font-size: 20px;
+    line-height: 1.55;
+    color: var(--text-dim);
+    margin: 0;
+  }
+  .dek code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.9em;
+    background: var(--panel);
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: var(--cyan);
+  }
+
+  /* ================= controlbar ================= */
+  .controlbar {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: end;
+    gap: 24px;
+    padding: 20px 24px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    margin-bottom: 32px;
+  }
+  @media (max-width: 900px) {
+    .controlbar { grid-template-columns: 1fr; align-items: stretch; gap: 16px; }
+  }
+  .titleField {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .titleFieldLabel {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+  .titleField input {
+    font-family: var(--font-serif);
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--text);
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--line);
+    padding: 6px 0;
+    outline: none;
+    transition: border-color 200ms ease;
+  }
+  .titleField input:focus { border-bottom-color: var(--cyan); }
+  .titleField input::placeholder { color: var(--text-faint); font-style: italic; }
+
+  .progress {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    white-space: nowrap;
+  }
+  .progressCount {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 24px;
+    letter-spacing: 0.04em;
+    color: var(--cyan);
+    line-height: 1;
+  }
+  .progressLabel {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+
+  .controlbarBtns {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  /* ================= buttons ================= */
+  .btn {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: 0.02em;
+    padding: 12px 20px;
+    border-radius: 4px;
+    border: 1px solid var(--cyan);
+    color: var(--cyan);
+    background: transparent;
+    cursor: pointer;
+    transition: background 200ms ease, color 200ms ease, border-color 200ms ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    white-space: nowrap;
+  }
+  .btn:hover { background: var(--cyan); color: var(--void); }
+  .btn:focus-visible { outline: var(--focus); outline-offset: 3px; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn:disabled:hover { background: transparent; color: var(--cyan); }
+  .btn.ghost {
+    border-color: var(--line);
+    color: var(--text-dim);
+    font-size: 13px;
+    padding: 10px 16px;
+  }
+  .btn.ghost:hover { background: var(--panel); color: var(--text); border-color: var(--text-faint); }
+  .btn.ghost.danger { color: #ffb0b0; }
+  .btn.ghost.danger:hover { border-color: var(--warn); color: var(--warn); background: transparent; }
+  .btn.warm {
+    border-color: var(--warm);
+    color: var(--warm);
+  }
+  .btn.warm:hover { background: var(--warm); color: var(--void); }
+  .btn.warm:focus-visible { outline: 2px solid var(--warm); outline-offset: 3px; }
+  .btn.warm .arrow { transition: transform 200ms ease; }
+  .btn.warm:hover .arrow { transform: translate(2px, -2px); }
+
+  .iconBtn {
+    appearance: none;
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--text-dim);
+    width: 36px;
+    height: 36px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 200ms ease, color 200ms ease, border-color 200ms ease;
+  }
+  .iconBtn:hover { color: var(--text); border-color: var(--text-faint); }
+  .iconBtn:focus-visible { outline: var(--focus); outline-offset: 3px; }
+
+  /* ================= board ================= */
+  .boardWrap {
+    margin-bottom: 48px;
+    overflow-x: auto;
+  }
+  .board {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(140px, 1fr));
+    gap: 10px;
+    min-width: 780px;
+  }
+  .catHeader {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--cell-radius);
+    padding: 14px 12px;
+  }
+  .catHeader input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text);
+    text-align: center;
+    padding: 4px 0;
+    border-bottom: 1px solid transparent;
+    transition: border-color 200ms ease;
+  }
+  .catHeader input:focus { border-bottom-color: var(--cyan); }
+  .catHeader input::placeholder { color: var(--text-faint); font-weight: 500; }
+
+  .cell {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--cell-radius);
+    padding: 14px 12px;
+    min-height: 120px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    text-align: left;
+    color: var(--text);
+    font-family: inherit;
+    transition: border-color 200ms ease, transform 200ms ease, background 200ms ease;
+    position: relative;
+  }
+  .cell:hover {
+    border-color: var(--cyan);
+    transform: translateY(-1px);
+    background: rgba(34, 211, 238, 0.04);
+  }
+  .cell:focus-visible {
+    outline: var(--focus);
+    outline-offset: 3px;
+  }
+  .cellTop {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+  }
+  .cellPoints {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: 0.02em;
+    color: var(--cyan);
+    line-height: 1;
+  }
+  .cellBadges {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .cellDD {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    color: var(--void);
+    background: var(--warm);
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+  .cellStatus {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--line);
+    display: inline-block;
+  }
+  .cell.filled .cellStatus { background: var(--ok); }
+  .cellPreview {
+    font-family: var(--font-serif);
+    font-size: 14px;
+    line-height: 1.4;
+    color: var(--text-dim);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .cellPreviewEmpty {
+    color: var(--text-faint);
+    font-style: italic;
+  }
+
+  /* ================= artifact block (§5.5 + §7.6 warm) ================= */
+  .artifact {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--warm);
+    border-radius: 4px;
+    padding: 28px 32px;
+    margin-bottom: 64px;
+    max-width: var(--content-max);
+  }
+  .artifactLabel {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--warm);
+    margin-bottom: 8px;
+  }
+  .artifactTitle {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: clamp(24px, 3vw, 30px);
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+    color: var(--text);
+    margin: 0 0 8px;
+  }
+  .artifactCopy {
+    font-family: var(--font-serif);
+    font-size: 17px;
+    line-height: 1.6;
+    color: var(--text-dim);
+    margin: 0 0 20px;
+  }
+  .artifactCopy code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.9em;
+    background: rgba(236, 93, 158, 0.08);
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: var(--warm);
+  }
+
+  /* ================= modal ================= */
+  .modalBackdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(9, 12, 31, 0.82);
+    backdrop-filter: blur(4px);
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .modalBackdrop[hidden] { display: none; }
+  .modal {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    width: 100%;
+    max-width: 560px;
+    max-height: 90vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 40px 100px rgba(0,0,0,0.6);
+  }
+  .modal.wide { max-width: 720px; }
+  .modalHead {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 24px 24px 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  .modalKicker {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin-bottom: 4px;
+  }
+  .modalTitle {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: 22px;
+    letter-spacing: -0.01em;
+    color: var(--text);
+    margin: 0;
+  }
+  .modalBody {
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .modalFoot {
+    padding: 16px 24px 20px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .fieldLabel {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+  .field textarea,
+  .modalBody textarea {
+    font-family: var(--font-serif);
+    font-size: 17px;
+    line-height: 1.5;
+    color: var(--text);
+    background: var(--void);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 12px 14px;
+    resize: vertical;
+    outline: none;
+    transition: border-color 200ms ease;
+  }
+  .field textarea:focus,
+  .modalBody textarea:focus { border-color: var(--cyan); }
+  #importArea {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .ddToggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+    padding: 4px 0;
+  }
+  .ddToggle input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .ddToggleUi {
+    width: 36px;
+    height: 20px;
+    background: var(--line);
+    border-radius: 999px;
+    position: relative;
+    transition: background 200ms ease;
+    flex: 0 0 auto;
+  }
+  .ddToggleUi::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--text);
+    transition: transform 200ms ease;
+  }
+  .ddToggle input:checked + .ddToggleUi { background: var(--warm); }
+  .ddToggle input:checked + .ddToggleUi::after { transform: translateX(16px); }
+  .ddToggle input:focus-visible + .ddToggleUi {
+    outline: 2px solid var(--cyan);
+    outline-offset: 3px;
+  }
+  .ddToggleLabel {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    color: var(--text);
+  }
+  .ddNote {
+    font-family: var(--font-sans);
+    font-size: 12px;
+    color: var(--text-faint);
+    margin: 0;
+  }
+
+  /* ================= toast ================= */
+  .toast {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--cyan);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    padding: 12px 20px;
+    border-radius: 4px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 220ms ease, opacity 220ms ease;
+    z-index: 60;
+    max-width: 90vw;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  .toast.error { border-left-color: var(--warn); }
+
+  /* ================= reduced motion ================= */
+  @media (prefers-reduced-motion: reduce) {
+    .cell,
+    .btn,
+    .btn.warm .arrow,
+    .ddToggleUi,
+    .ddToggleUi::after,
+    .toast { transition: none; }
+    .cell:hover { transform: none; }
+  }
+</style>
+
+<script is:inline>
+  (function () {
+    'use strict';
+
+    // =============================================================================
+    // Constants
+    // =============================================================================
+    const STORAGE_KEY = 'mcnair_jeopardy_creator_state';
+    const POINT_LEVELS = [200, 400, 600, 800, 1000];
+    const CATEGORY_COUNT = 5;
+
+    // =============================================================================
+    // State
+    // =============================================================================
+    function makeBlankState() {
+      const categories = [];
+      for (let c = 0; c < CATEGORY_COUNT; c++) {
+        const questions = POINT_LEVELS.map((points) => ({
+          points,
+          question: '',
+          answer: '',
+          isDailyDouble: false,
+        }));
+        categories.push({ name: '', questions });
+      }
+      return { title: '', categories };
+    }
+
+    let state = makeBlankState();
+    let currentCell = null; // { cIdx, qIdx } when the modal is open
+
+    // =============================================================================
+    // Persistence
+    // =============================================================================
+    function save() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (err) {
+        // Quota / private-mode failure. Non-fatal.
+        console.warn('Autosave failed', err);
+      }
+    }
+
+    function load() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (validateState(parsed)) {
+          state = normalizeState(parsed);
+        }
+      } catch (err) {
+        console.warn('Load failed', err);
+      }
+    }
+
+    function validateState(candidate) {
+      if (!candidate || typeof candidate !== 'object') return false;
+      if (typeof candidate.title !== 'string') return false;
+      if (!Array.isArray(candidate.categories)) return false;
+      return true;
+    }
+
+    // Coerce any imported / stored state into a valid 5x5 shape so a partial
+    // import can never crash render.
+    function normalizeState(input) {
+      const out = makeBlankState();
+      out.title = typeof input.title === 'string' ? input.title : '';
+      const cats = Array.isArray(input.categories) ? input.categories : [];
+      for (let c = 0; c < CATEGORY_COUNT; c++) {
+        const srcCat = cats[c] || {};
+        out.categories[c].name = typeof srcCat.name === 'string' ? srcCat.name : '';
+        const srcQs = Array.isArray(srcCat.questions) ? srcCat.questions : [];
+        for (let q = 0; q < POINT_LEVELS.length; q++) {
+          const srcQ = srcQs.find((x) => x && x.points === POINT_LEVELS[q]) || srcQs[q] || {};
+          out.categories[c].questions[q] = {
+            points: POINT_LEVELS[q],
+            question: typeof srcQ.question === 'string' ? srcQ.question : '',
+            answer: typeof srcQ.answer === 'string' ? srcQ.answer : '',
+            isDailyDouble: srcQ.isDailyDouble === true,
+          };
+        }
+      }
+      // Enforce single Daily Double.
+      let ddCount = 0;
+      for (const cat of out.categories) {
+        for (const q of cat.questions) {
+          if (q.isDailyDouble) {
+            ddCount++;
+            if (ddCount > 1) q.isDailyDouble = false;
+          }
+        }
+      }
+      return out;
+    }
+
+    // =============================================================================
+    // Rendering
+    // =============================================================================
+    const boardEl = document.getElementById('board');
+    const titleInputEl = document.getElementById('gameTitleInput');
+    const progressEl = document.getElementById('progressCount');
+
+    function render() {
+      titleInputEl.value = state.title;
+      renderBoard();
+      renderProgress();
+    }
+
+    function renderBoard() {
+      boardEl.innerHTML = '';
+
+      // Category headers row.
+      for (let c = 0; c < CATEGORY_COUNT; c++) {
+        const header = document.createElement('div');
+        header.className = 'catHeader';
+        header.setAttribute('role', 'columnheader');
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = state.categories[c].name;
+        input.placeholder = `Category ${c + 1}`;
+        input.setAttribute('aria-label', `Category ${c + 1} name`);
+        input.addEventListener('input', (e) => {
+          state.categories[c].name = e.target.value;
+          save();
+        });
+        header.appendChild(input);
+        boardEl.appendChild(header);
+      }
+
+      // Cells row by row so keyboard tab order reads left-to-right, top-to-bottom.
+      for (let q = 0; q < POINT_LEVELS.length; q++) {
+        for (let c = 0; c < CATEGORY_COUNT; c++) {
+          const cell = renderCell(c, q);
+          boardEl.appendChild(cell);
+        }
+      }
+    }
+
+    function renderCell(cIdx, qIdx) {
+      const data = state.categories[cIdx].questions[qIdx];
+      const cell = document.createElement('button');
+      cell.type = 'button';
+      cell.className = 'cell';
+      cell.setAttribute('role', 'gridcell');
+      cell.setAttribute('data-c', String(cIdx));
+      cell.setAttribute('data-q', String(qIdx));
+      const filled = isFilled(data);
+      if (filled) cell.classList.add('filled');
+      const catLabel = state.categories[cIdx].name || `Category ${cIdx + 1}`;
+      cell.setAttribute(
+        'aria-label',
+        `${catLabel}, $${data.points}, ${filled ? 'filled' : 'empty'}${data.isDailyDouble ? ', Daily Double' : ''}`
+      );
+
+      const top = document.createElement('div');
+      top.className = 'cellTop';
+      const points = document.createElement('span');
+      points.className = 'cellPoints';
+      points.textContent = '$' + data.points;
+      top.appendChild(points);
+
+      const badges = document.createElement('div');
+      badges.className = 'cellBadges';
+      if (data.isDailyDouble) {
+        const dd = document.createElement('span');
+        dd.className = 'cellDD';
+        dd.textContent = 'DD';
+        dd.setAttribute('aria-hidden', 'true');
+        badges.appendChild(dd);
+      }
+      const status = document.createElement('span');
+      status.className = 'cellStatus';
+      status.setAttribute('aria-hidden', 'true');
+      badges.appendChild(status);
+      top.appendChild(badges);
+
+      cell.appendChild(top);
+
+      const preview = document.createElement('div');
+      preview.className = 'cellPreview' + (filled ? '' : ' cellPreviewEmpty');
+      preview.textContent = filled ? truncate(data.question, 90) : 'Click to add a clue';
+      cell.appendChild(preview);
+
+      cell.addEventListener('click', () => openModal(cIdx, qIdx));
+      return cell;
+    }
+
+    function renderProgress() {
+      const total = CATEGORY_COUNT * POINT_LEVELS.length;
+      let filled = 0;
+      for (const cat of state.categories) {
+        for (const q of cat.questions) {
+          if (isFilled(q)) filled++;
+        }
+      }
+      progressEl.textContent = filled + ' / ' + total;
+    }
+
+    function isFilled(q) {
+      return !!(q && q.question && q.question.trim() && q.answer && q.answer.trim());
+    }
+
+    function truncate(str, n) {
+      if (!str) return '';
+      const s = str.trim();
+      return s.length > n ? s.slice(0, n - 1) + '…' : s;
+    }
+
+    // =============================================================================
+    // Q&A modal
+    // =============================================================================
+    const modalBackdrop = document.getElementById('modalBackdrop');
+    const modalKicker = document.getElementById('modalKicker');
+    const clueInput = document.getElementById('clueInput');
+    const answerInput = document.getElementById('answerInput');
+    const ddInput = document.getElementById('ddInput');
+    const modalCloseBtn = document.getElementById('modalCloseBtn');
+    const modalCancelBtn = document.getElementById('modalCancelBtn');
+    const modalSaveBtn = document.getElementById('modalSaveBtn');
+    const modalSaveNextBtn = document.getElementById('modalSaveNextBtn');
+    let lastFocusBeforeModal = null;
+
+    function openModal(cIdx, qIdx) {
+      currentCell = { cIdx, qIdx };
+      const cat = state.categories[cIdx];
+      const q = cat.questions[qIdx];
+      const catName = cat.name || `Category ${cIdx + 1}`;
+      modalKicker.textContent = `${catName} · $${q.points}`;
+      clueInput.value = q.question;
+      answerInput.value = q.answer;
+      ddInput.checked = q.isDailyDouble;
+      lastFocusBeforeModal = document.activeElement;
+      modalBackdrop.hidden = false;
+      // Focus the clue field; small delay so browsers don't skip focus on newly
+      // unhidden element.
+      setTimeout(() => clueInput.focus(), 20);
+    }
+
+    function closeModal() {
+      modalBackdrop.hidden = true;
+      currentCell = null;
+      if (lastFocusBeforeModal && typeof lastFocusBeforeModal.focus === 'function') {
+        lastFocusBeforeModal.focus();
+      }
+    }
+
+    function saveModal() {
+      if (!currentCell) return false;
+      const { cIdx, qIdx } = currentCell;
+      const q = state.categories[cIdx].questions[qIdx];
+      q.question = clueInput.value.trim();
+      q.answer = answerInput.value.trim();
+      const wantsDD = ddInput.checked;
+      if (wantsDD) {
+        // Enforce single DD by clearing any other flag on the board.
+        for (const cat of state.categories) {
+          for (const item of cat.questions) {
+            item.isDailyDouble = false;
+          }
+        }
+        q.isDailyDouble = true;
+      } else {
+        q.isDailyDouble = false;
+      }
+      save();
+      renderBoard();
+      renderProgress();
+      return true;
+    }
+
+    function saveAndClose() {
+      if (saveModal()) {
+        showToast('Saved.');
+        closeModal();
+      }
+    }
+
+    function saveAndNext() {
+      if (!saveModal()) return;
+      const { cIdx, qIdx } = currentCell;
+      // Advance down the column first, then wrap to the next column.
+      let nextC = cIdx;
+      let nextQ = qIdx + 1;
+      if (nextQ >= POINT_LEVELS.length) {
+        nextQ = 0;
+        nextC = (cIdx + 1) % CATEGORY_COUNT;
+      }
+      // Reopen without closing the modal to keep the flow.
+      openModal(nextC, nextQ);
+    }
+
+    modalCloseBtn.addEventListener('click', closeModal);
+    modalCancelBtn.addEventListener('click', closeModal);
+    modalSaveBtn.addEventListener('click', saveAndClose);
+    modalSaveNextBtn.addEventListener('click', saveAndNext);
+    modalBackdrop.addEventListener('click', (e) => {
+      if (e.target === modalBackdrop) closeModal();
+    });
+
+    // Escape closes any open modal; Cmd/Ctrl+Enter saves within Q&A modal.
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (!modalBackdrop.hidden) { closeModal(); return; }
+        if (!importBackdrop.hidden) { closeImportModal(); return; }
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !modalBackdrop.hidden) {
+        e.preventDefault();
+        saveAndClose();
+      }
+    });
+
+    // =============================================================================
+    // Controlbar wiring
+    // =============================================================================
+    titleInputEl.addEventListener('input', (e) => {
+      state.title = e.target.value;
+      save();
+    });
+
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      const filledCount = countFilled();
+      const msg = filledCount > 0
+        ? `Clear all ${filledCount} filled questions and start over?`
+        : 'Clear the board?';
+      if (!window.confirm(msg)) return;
+      state = makeBlankState();
+      save();
+      render();
+      showToast('Board cleared.');
+    });
+
+    function countFilled() {
+      let n = 0;
+      for (const cat of state.categories) {
+        for (const q of cat.questions) {
+          if (isFilled(q)) n++;
+        }
+      }
+      return n;
+    }
+
+    document.getElementById('exportJsonBtn').addEventListener('click', async () => {
+      const json = JSON.stringify(state, null, 2);
+      try {
+        await navigator.clipboard.writeText(json);
+        showToast('JSON copied to clipboard.');
+      } catch (err) {
+        // Fallback: dump into the import textarea so user can select + copy.
+        importArea.value = json;
+        importBackdrop.hidden = false;
+        showToast('Copy blocked. Select the text and copy manually.', 'error');
+      }
+    });
+
+    // =============================================================================
+    // Import modal
+    // =============================================================================
+    const importBackdrop = document.getElementById('importBackdrop');
+    const importArea = document.getElementById('importArea');
+    const importBtn = document.getElementById('importBtn');
+    const importCloseBtn = document.getElementById('importCloseBtn');
+    const importCancelBtn = document.getElementById('importCancelBtn');
+    const importConfirmBtn = document.getElementById('importConfirmBtn');
+
+    function openImportModal() {
+      importArea.value = '';
+      importBackdrop.hidden = false;
+      setTimeout(() => importArea.focus(), 20);
+    }
+    function closeImportModal() { importBackdrop.hidden = true; }
+
+    importBtn.addEventListener('click', openImportModal);
+    importCloseBtn.addEventListener('click', closeImportModal);
+    importCancelBtn.addEventListener('click', closeImportModal);
+    importBackdrop.addEventListener('click', (e) => {
+      if (e.target === importBackdrop) closeImportModal();
+    });
+    importConfirmBtn.addEventListener('click', () => {
+      const raw = importArea.value.trim();
+      if (!raw) {
+        showToast('Paste JSON first.', 'error');
+        return;
+      }
+      try {
+        const parsed = JSON.parse(raw);
+        if (!validateState(parsed)) throw new Error('Missing title or categories.');
+        state = normalizeState(parsed);
+        save();
+        render();
+        closeImportModal();
+        showToast('Board replaced.');
+      } catch (err) {
+        showToast('That did not parse as a valid game file.', 'error');
+      }
+    });
+
+    // =============================================================================
+    // Download
+    // =============================================================================
+    document.getElementById('downloadBtn').addEventListener('click', () => {
+      const filled = countFilled();
+      if (filled < CATEGORY_COUNT * POINT_LEVELS.length) {
+        const total = CATEGORY_COUNT * POINT_LEVELS.length;
+        const proceed = window.confirm(
+          `Only ${filled} / ${total} clues are filled. Empty cells will show as blank on the projector. Download anyway?`
+        );
+        if (!proceed) return;
+      }
+      const html = buildStandaloneHtml(state);
+      const filename = sanitizeFilename(state.title || 'jeopardy-game') + '.html';
+      triggerDownload(html, filename);
+      showToast('Downloading your game.');
+    });
+
+    function sanitizeFilename(name) {
+      return String(name)
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 60) || 'jeopardy-game';
+    }
+
+    function triggerDownload(text, filename) {
+      const blob = new Blob([text], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    // =============================================================================
+    // Toast
+    // =============================================================================
+    const toastEl = document.getElementById('toast');
+    let toastTimer = null;
+    function showToast(msg, kind) {
+      toastEl.textContent = msg;
+      toastEl.classList.toggle('error', kind === 'error');
+      toastEl.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2600);
+    }
+
+    // =============================================================================
+    // Standalone HTML builder — the exported game engine.
+    // =============================================================================
+    function buildStandaloneHtml(data) {
+      // Serialize the game data safely for injection into a <script> block.
+      const dataJson = JSON.stringify(data).replace(/</g, '\\u003c');
+      const gameTitle = escapeHtml(data.title || 'Classroom Jeopardy');
+
+      // Return a fully self-contained document. No external CSS, no external JS,
+      // no external fonts. Fonts fall back to system serif / sans stacks so the
+      // exported file loads instantly on a projector with no internet.
+      //
+      // NOTE: The <style> and <script> tags in the template literals below are
+      // split across concatenated strings so Astro's HTML tokenizer doesn't see
+      // a bare <style> or <script> at column 0 and treat it as a real page tag.
+      const OPEN_STYLE  = '<' + 'style>';
+      const CLOSE_STYLE = '</' + 'style>';
+      const OPEN_SCRIPT = '<' + 'script>';
+      const CLOSE_SCRIPT = '</' + 'script>';
+      return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>${gameTitle}</title>
+${OPEN_STYLE}
+  :root {
+    --void: #090C1F;
+    --panel: #101636;
+    --line: #232852;
+    --text: #F1F4FF;
+    --text-dim: #A8B2D8;
+    --text-faint: #6A7BA8;
+    --cyan: #22D3EE;
+    --warm: #EC5D9E;
+    --ok: #4CB86A;
+    --font-serif: Georgia, 'Times New Roman', serif;
+    --font-sans:  -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--void);
+    color: var(--text);
+    font-family: var(--font-sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  .app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  header.gameHeader {
+    padding: 20px 32px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .gameTitle {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: clamp(22px, 3vw, 34px);
+    letter-spacing: -0.01em;
+    margin: 0;
+    color: var(--text);
+  }
+  .headerActions { display: flex; gap: 10px; align-items: center; }
+  .headBtn {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    padding: 10px 16px;
+    border-radius: 4px;
+    border: 1px solid var(--line);
+    color: var(--text-dim);
+    background: transparent;
+    cursor: pointer;
+    transition: border-color 200ms ease, color 200ms ease, background 200ms ease;
+  }
+  .headBtn:hover { border-color: var(--cyan); color: var(--cyan); }
+  .headBtn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+
+  main.boardMain {
+    flex: 1;
+    padding: 32px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .board {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    width: 100%;
+    max-width: 1400px;
+  }
+  .catHead {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 18px 12px;
+    text-align: center;
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: clamp(13px, 1.5vw, 18px);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text);
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .cell {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    aspect-ratio: 3 / 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Georgia', serif;
+    font-weight: 700;
+    font-size: clamp(28px, 4vw, 56px);
+    color: var(--cyan);
+    cursor: pointer;
+    transition: transform 200ms ease, background 200ms ease, border-color 200ms ease;
+  }
+  .cell:hover:not(.used) {
+    transform: translateY(-2px);
+    background: rgba(34, 211, 238, 0.06);
+    border-color: var(--cyan);
+  }
+  .cell:focus-visible {
+    outline: 2px solid var(--cyan);
+    outline-offset: 3px;
+  }
+  .cell.used {
+    color: transparent;
+    background: transparent;
+    border-color: var(--line);
+    cursor: default;
+  }
+
+  /* Clue modal */
+  .clueBackdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(9, 12, 31, 0.94);
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+  }
+  .clueBackdrop[hidden] { display: none; }
+  .cluePanel {
+    max-width: 1000px;
+    width: 100%;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 48px;
+    text-align: center;
+    box-shadow: 0 40px 100px rgba(0,0,0,0.6);
+  }
+  .cluePanel.dd { border-color: var(--warm); }
+  .clueKicker {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 20px;
+  }
+  .clueKicker.dd { color: var(--warm); }
+  .clueText {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: clamp(28px, 4vw, 44px);
+    line-height: 1.3;
+    letter-spacing: -0.005em;
+    color: var(--text);
+    margin: 0 0 32px;
+  }
+  .clueAnswer {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-weight: 500;
+    font-size: clamp(24px, 3.4vw, 36px);
+    line-height: 1.3;
+    color: var(--cyan);
+    margin: 0 0 32px;
+  }
+  .clueAnswer.hidden { display: none; }
+  .clueActions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .clueBtn {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: 0.02em;
+    padding: 14px 26px;
+    border-radius: 4px;
+    border: 1px solid var(--cyan);
+    color: var(--cyan);
+    background: transparent;
+    cursor: pointer;
+    transition: background 200ms ease, color 200ms ease;
+  }
+  .clueBtn:hover { background: var(--cyan); color: var(--void); }
+  .clueBtn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+  .clueBtn.ghost {
+    border-color: var(--line);
+    color: var(--text-dim);
+  }
+  .clueBtn.ghost:hover { border-color: var(--text-faint); color: var(--text); background: transparent; }
+
+  /* Scoreboard */
+  .scoreboard {
+    padding: 20px 32px;
+    border-top: 1px solid var(--line);
+    background: var(--panel);
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+  }
+  .team {
+    background: var(--void);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 14px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 200px;
+    flex: 1;
+  }
+  .team input.teamName {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 14px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid transparent;
+    color: var(--text);
+    outline: none;
+    padding: 2px 0;
+    transition: border-color 200ms ease;
+  }
+  .team input.teamName:focus { border-bottom-color: var(--cyan); }
+  .teamScoreRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .teamScore {
+    font-family: 'Georgia', serif;
+    font-weight: 700;
+    font-size: 26px;
+    color: var(--cyan);
+    flex: 1;
+    line-height: 1;
+  }
+  .teamScore.neg { color: #ff8fa3; }
+  .scoreBtn {
+    appearance: none;
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--text-dim);
+    width: 34px;
+    height: 34px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 16px;
+    transition: border-color 200ms ease, color 200ms ease;
+  }
+  .scoreBtn:hover { border-color: var(--cyan); color: var(--cyan); }
+  .scoreBtn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+
+  .footStrip {
+    padding: 12px 32px;
+    border-top: 1px solid var(--line);
+    text-align: center;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cell, .headBtn, .clueBtn, .team input.teamName, .scoreBtn { transition: none; }
+    .cell:hover:not(.used) { transform: none; }
+  }
+${CLOSE_STYLE}
+</head>
+<body>
+<div class="app">
+  <header class="gameHeader">
+    <h1 class="gameTitle" id="gameTitleEl"></h1>
+    <div class="headerActions">
+      <button class="headBtn" id="soundBtn" type="button" aria-pressed="true">Sound: On</button>
+      <button class="headBtn" id="fsBtn" type="button">Full screen</button>
+      <button class="headBtn" id="resetBtn" type="button">Reset scores</button>
+    </div>
+  </header>
+
+  <main class="boardMain">
+    <div class="board" id="boardEl" role="grid" aria-label="Jeopardy game board"></div>
+  </main>
+
+  <div class="clueBackdrop" id="clueBackdrop" hidden>
+    <div class="cluePanel" id="cluePanel" role="dialog" aria-modal="true" aria-labelledby="clueText">
+      <div class="clueKicker" id="clueKicker"></div>
+      <p class="clueText" id="clueText"></p>
+      <p class="clueAnswer hidden" id="clueAnswer"></p>
+      <div class="clueActions">
+        <button class="clueBtn ghost" id="clueCloseBtn" type="button">Close</button>
+        <button class="clueBtn" id="revealBtn" type="button">Reveal answer</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="scoreboard" id="scoreboardEl" aria-label="Team scoreboard"></div>
+
+  <div class="footStrip">Built with the Jeopardy Game Creator · austinmcnair.com</div>
+</div>
+
+${OPEN_SCRIPT}
+  (function () {
+    'use strict';
+    const DATA = ${dataJson};
+
+    const gameTitleEl = document.getElementById('gameTitleEl');
+    gameTitleEl.textContent = DATA.title || 'Classroom Jeopardy';
+    document.title = DATA.title || 'Classroom Jeopardy';
+
+    // -------- audio --------
+    let audioCtx = null;
+    let soundOn = true;
+    function ensureCtx() {
+      if (!audioCtx) {
+        try {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (AC) audioCtx = new AC();
+        } catch (e) { audioCtx = null; }
+      }
+      return audioCtx;
+    }
+    function tone(freq, duration, opts) {
+      if (!soundOn) return;
+      const ctx = ensureCtx();
+      if (!ctx) return;
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = (opts && opts.type) || 'sine';
+      o.frequency.setValueAtTime(freq, ctx.currentTime);
+      const peak = (opts && opts.gain) || 0.18;
+      g.gain.setValueAtTime(0.0001, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(peak, ctx.currentTime + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+      o.connect(g).connect(ctx.destination);
+      o.start();
+      o.stop(ctx.currentTime + duration + 0.05);
+    }
+    function playSelect() { tone(520, 0.14, { type: 'sine' }); }
+    function playReveal() { tone(660, 0.18, { type: 'triangle' }); setTimeout(() => tone(880, 0.24, { type: 'triangle' }), 120); }
+    function playDailyDouble() {
+      const seq = [523, 659, 784, 1047];
+      seq.forEach((f, i) => setTimeout(() => tone(f, 0.22, { type: 'triangle', gain: 0.22 }), i * 140));
+    }
+
+    const soundBtn = document.getElementById('soundBtn');
+    soundBtn.addEventListener('click', () => {
+      soundOn = !soundOn;
+      soundBtn.textContent = soundOn ? 'Sound: On' : 'Sound: Off';
+      soundBtn.setAttribute('aria-pressed', soundOn ? 'true' : 'false');
+    });
+
+    // -------- fullscreen --------
+    document.getElementById('fsBtn').addEventListener('click', () => {
+      const el = document.documentElement;
+      if (!document.fullscreenElement && el.requestFullscreen) {
+        el.requestFullscreen().catch(() => {});
+      } else if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+    });
+
+    // -------- board --------
+    const boardEl = document.getElementById('boardEl');
+    const used = new Set(); // "c-q"
+    function key(c, q) { return c + '-' + q; }
+
+    function renderBoard() {
+      boardEl.innerHTML = '';
+      const cats = DATA.categories || [];
+      for (let c = 0; c < 5; c++) {
+        const head = document.createElement('div');
+        head.className = 'catHead';
+        head.textContent = (cats[c] && cats[c].name) || ('Category ' + (c + 1));
+        boardEl.appendChild(head);
+      }
+      const points = [200, 400, 600, 800, 1000];
+      for (let q = 0; q < 5; q++) {
+        for (let c = 0; c < 5; c++) {
+          const cell = document.createElement('button');
+          cell.type = 'button';
+          cell.className = 'cell';
+          cell.setAttribute('role', 'gridcell');
+          const cat = cats[c] || {};
+          const item = (cat.questions && cat.questions[q]) || null;
+          const p = (item && item.points) || points[q];
+          cell.textContent = '$' + p;
+          if (used.has(key(c, q)) || !item || !item.question) {
+            // Empty cells go straight to used-state so play doesn't dead-end.
+            if (!item || !item.question) {
+              cell.classList.add('used');
+              cell.setAttribute('aria-label', '$' + p + ' — empty');
+              cell.tabIndex = -1;
+            }
+          }
+          if (used.has(key(c, q))) {
+            cell.classList.add('used');
+            cell.tabIndex = -1;
+          }
+          if (item && item.question) {
+            cell.setAttribute('aria-label', ((cat.name) || 'Category ' + (c + 1)) + ', $' + p + (item.isDailyDouble ? ', Daily Double' : ''));
+            cell.addEventListener('click', () => openClue(c, q));
+          }
+          boardEl.appendChild(cell);
+        }
+      }
+    }
+
+    // -------- clue modal --------
+    const clueBackdrop = document.getElementById('clueBackdrop');
+    const cluePanel = document.getElementById('cluePanel');
+    const clueKicker = document.getElementById('clueKicker');
+    const clueText = document.getElementById('clueText');
+    const clueAnswer = document.getElementById('clueAnswer');
+    const revealBtn = document.getElementById('revealBtn');
+    const clueCloseBtn = document.getElementById('clueCloseBtn');
+    let currentPos = null;
+
+    function openClue(c, q) {
+      const cat = (DATA.categories && DATA.categories[c]) || {};
+      const item = (cat.questions && cat.questions[q]) || null;
+      if (!item || !item.question) return;
+      currentPos = { c, q };
+      const catName = cat.name || ('Category ' + (c + 1));
+      const isDD = !!item.isDailyDouble;
+      clueKicker.textContent = isDD ? 'Daily Double · ' + catName : catName + ' · $' + item.points;
+      clueKicker.className = 'clueKicker' + (isDD ? ' dd' : '');
+      cluePanel.className = 'cluePanel' + (isDD ? ' dd' : '');
+      clueText.textContent = item.question;
+      clueAnswer.textContent = item.answer || '';
+      clueAnswer.classList.add('hidden');
+      revealBtn.textContent = 'Reveal answer';
+      revealBtn.dataset.state = 'clue';
+      clueBackdrop.hidden = false;
+      if (isDD) playDailyDouble(); else playSelect();
+      setTimeout(() => revealBtn.focus(), 20);
+    }
+    function closeClue() {
+      if (currentPos) {
+        used.add(key(currentPos.c, currentPos.q));
+        currentPos = null;
+      }
+      clueBackdrop.hidden = true;
+      renderBoard();
+    }
+    revealBtn.addEventListener('click', () => {
+      if (revealBtn.dataset.state === 'clue') {
+        clueAnswer.classList.remove('hidden');
+        revealBtn.textContent = 'Mark used & close';
+        revealBtn.dataset.state = 'reveal';
+        playReveal();
+      } else {
+        closeClue();
+      }
+    });
+    clueCloseBtn.addEventListener('click', () => {
+      // Close without marking the cell used (accidental clicks).
+      currentPos = null;
+      clueBackdrop.hidden = true;
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !clueBackdrop.hidden) {
+        currentPos = null;
+        clueBackdrop.hidden = true;
+      }
+      if (e.key === ' ' && !clueBackdrop.hidden) {
+        e.preventDefault();
+        revealBtn.click();
+      }
+    });
+
+    // -------- scoreboard --------
+    const scoreboardEl = document.getElementById('scoreboardEl');
+    let teams = [
+      { name: 'Team 1', score: 0 },
+      { name: 'Team 2', score: 0 },
+      { name: 'Team 3', score: 0 },
+    ];
+    function renderScoreboard() {
+      scoreboardEl.innerHTML = '';
+      teams.forEach((t, i) => {
+        const team = document.createElement('div');
+        team.className = 'team';
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.className = 'teamName';
+        nameInput.value = t.name;
+        nameInput.setAttribute('aria-label', 'Team ' + (i + 1) + ' name');
+        nameInput.addEventListener('input', (e) => { teams[i].name = e.target.value; });
+
+        const row = document.createElement('div');
+        row.className = 'teamScoreRow';
+        const minus100 = document.createElement('button');
+        minus100.className = 'scoreBtn';
+        minus100.type = 'button';
+        minus100.textContent = '−';
+        minus100.setAttribute('aria-label', 'Subtract 100 from ' + t.name);
+        minus100.addEventListener('click', () => { teams[i].score -= 100; renderScoreboard(); });
+
+        const scoreEl = document.createElement('div');
+        scoreEl.className = 'teamScore' + (t.score < 0 ? ' neg' : '');
+        scoreEl.textContent = (t.score < 0 ? '−$' : '$') + Math.abs(t.score);
+
+        const plus100 = document.createElement('button');
+        plus100.className = 'scoreBtn';
+        plus100.type = 'button';
+        plus100.textContent = '+';
+        plus100.setAttribute('aria-label', 'Add 100 to ' + t.name);
+        plus100.addEventListener('click', () => { teams[i].score += 100; renderScoreboard(); });
+
+        row.appendChild(minus100);
+        row.appendChild(scoreEl);
+        row.appendChild(plus100);
+        team.appendChild(nameInput);
+        team.appendChild(row);
+        scoreboardEl.appendChild(team);
+      });
+    }
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      if (!confirm('Reset all team scores to 0?')) return;
+      teams = teams.map((t) => ({ name: t.name, score: 0 }));
+      used.clear();
+      renderScoreboard();
+      renderBoard();
+    });
+
+    renderBoard();
+    renderScoreboard();
+  })();
+${CLOSE_SCRIPT}
+</body>
+</html>`;
+    }
+
+    // Basic HTML escape for values injected into the exported document's markup.
+    // The main data payload is JSON-serialized (with a script-tag-safe swap),
+    // so this only matters for the outer document title.
+    // (Historically a bare closing script tag in this comment would terminate
+    // the surrounding inline script early. Fixed by not writing it.)
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // =============================================================================
+    // Bootstrap
+    // =============================================================================
+    load();
+    render();
+  })();
+</script>
+</Layout>
