@@ -35,6 +35,7 @@ const description =
           <span class="progressLabel">questions filled</span>
         </div>
         <div class="controlbarBtns">
+          <button class="btn" id="generateBtn" type="button">Generate from list ✨</button>
           <button class="btn ghost" id="importBtn" type="button">Import JSON</button>
           <button class="btn ghost" id="exportJsonBtn" type="button">Copy JSON</button>
           <button class="btn ghost danger" id="clearBtn" type="button">Clear board</button>
@@ -142,6 +143,78 @@ const description =
       <div class="modalFoot">
         <button class="btn ghost" id="importCancelBtn" type="button">Cancel</button>
         <button class="btn" id="importConfirmBtn" type="button">Replace board</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ Generate-from-list modal ============ -->
+  <div class="modalBackdrop" id="generateBackdrop" hidden>
+    <div
+      class="modal wide"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="generateTitle"
+    >
+      <div class="modalHead">
+        <div>
+          <div class="modalKicker">Auto-generate</div>
+          <h3 class="modalTitle" id="generateTitle">Paste your questions and answers</h3>
+        </div>
+        <button class="iconBtn" id="generateCloseBtn" type="button" aria-label="Close">✕</button>
+      </div>
+      <div class="modalBody">
+        <label class="field">
+          <span class="fieldLabel">Game title (optional)</span>
+          <input
+            id="generateTitleInput"
+            type="text"
+            class="textInput"
+            placeholder="e.g. 7th Grade Life Science Review"
+            autocomplete="off"
+            spellcheck="true"
+          />
+        </label>
+        <label class="field">
+          <span class="fieldLabel">Questions &amp; answers</span>
+          <textarea
+            id="generateArea"
+            rows="14"
+            spellcheck="true"
+            placeholder="Paste up to about 100 items. Any format works — one per line, tab-separated, numbered, with headers. Bael figures it out."
+          ></textarea>
+        </label>
+        <p class="ddNote">Uses AI to cluster into 5 categories × 5 clues each. You&#39;ll see a preview before it replaces your current board.</p>
+      </div>
+      <div class="modalFoot">
+        <button class="btn ghost" id="generateCancelBtn" type="button">Cancel</button>
+        <button class="btn" id="generateConfirmBtn" type="button">Generate board</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ Preview modal ============ -->
+  <div class="modalBackdrop" id="previewBackdrop" hidden>
+    <div
+      class="modal wide"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="previewTitle"
+    >
+      <div class="modalHead">
+        <div>
+          <div class="modalKicker">Preview</div>
+          <h3 class="modalTitle" id="previewTitle">Review the generated board</h3>
+        </div>
+        <button class="iconBtn" id="previewCloseBtn" type="button" aria-label="Close">✕</button>
+      </div>
+      <div class="modalBody">
+        <p class="previewMeta" id="previewMeta"></p>
+        <div class="previewGrid" id="previewGrid"></div>
+        <p class="ddNote">Replacing will overwrite your current board. You can still edit any cell after replacing.</p>
+      </div>
+      <div class="modalFoot">
+        <button class="btn ghost" id="previewCancelBtn" type="button">Cancel</button>
+        <button class="btn" id="previewConfirmBtn" type="button">Replace board</button>
       </div>
     </div>
   </div>
@@ -654,6 +727,104 @@ const description =
     margin: 0;
   }
 
+  /* text input inside modals (Game title on generate modal) */
+  .textInput {
+    font-family: var(--font-serif);
+    font-size: 17px;
+    color: var(--text);
+    background: var(--void);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 12px 14px;
+    outline: none;
+    transition: border-color 200ms ease;
+  }
+  .textInput:focus { border-color: var(--cyan); }
+
+  /* loading state on primary Generate button while request is in flight */
+  .btn.loading {
+    opacity: 0.7;
+    cursor: wait;
+    pointer-events: none;
+  }
+
+  /* ================= preview grid ================= */
+  .previewMeta {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    color: var(--text-dim);
+    margin: 0 0 4px;
+  }
+  .previewGrid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+  }
+  @media (max-width: 720px) {
+    .previewGrid { grid-template-columns: 1fr; }
+  }
+  .previewCat {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .previewCatName {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text);
+    background: var(--void);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 10px 8px;
+    text-align: center;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .previewClue {
+    background: var(--void);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .previewClue.empty { opacity: 0.4; }
+  .previewClueTop {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--cyan);
+    letter-spacing: 0.04em;
+  }
+  .previewClueText {
+    font-family: var(--font-serif);
+    font-size: 12px;
+    line-height: 1.35;
+    color: var(--text-dim);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .previewClueAns {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 11px;
+    line-height: 1.3;
+    color: var(--text-faint);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
   /* ================= toast ================= */
   .toast {
     position: fixed;
@@ -998,6 +1169,10 @@ const description =
       if (e.key === 'Escape') {
         if (!modalBackdrop.hidden) { closeModal(); return; }
         if (!importBackdrop.hidden) { closeImportModal(); return; }
+        const genEl = document.getElementById('generateBackdrop');
+        if (genEl && !genEl.hidden) { closeGenerateModal(); return; }
+        const prevEl = document.getElementById('previewBackdrop');
+        if (prevEl && !prevEl.hidden) { closePreviewModal(); return; }
       }
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !modalBackdrop.hidden) {
         e.preventDefault();
@@ -1088,6 +1263,153 @@ const description =
       } catch (err) {
         showToast('That did not parse as a valid game file.', 'error');
       }
+    });
+
+    // =============================================================================
+    // Generate-from-list (AI) modal + Preview modal
+    // =============================================================================
+    const generateBackdrop = document.getElementById('generateBackdrop');
+    const generateArea = document.getElementById('generateArea');
+    const generateTitleInput = document.getElementById('generateTitleInput');
+    const generateBtn = document.getElementById('generateBtn');
+    const generateCloseBtn = document.getElementById('generateCloseBtn');
+    const generateCancelBtn = document.getElementById('generateCancelBtn');
+    const generateConfirmBtn = document.getElementById('generateConfirmBtn');
+
+    const previewBackdrop = document.getElementById('previewBackdrop');
+    const previewGrid = document.getElementById('previewGrid');
+    const previewMeta = document.getElementById('previewMeta');
+    const previewCloseBtn = document.getElementById('previewCloseBtn');
+    const previewCancelBtn = document.getElementById('previewCancelBtn');
+    const previewConfirmBtn = document.getElementById('previewConfirmBtn');
+
+    let pendingGeneratedState = null; // holds normalized state waiting for confirm
+
+    function openGenerateModal() {
+      generateArea.value = '';
+      generateTitleInput.value = '';
+      generateBackdrop.hidden = false;
+      setTimeout(() => generateArea.focus(), 20);
+    }
+    function closeGenerateModal() {
+      generateBackdrop.hidden = true;
+      setGenerateBusy(false);
+    }
+    function setGenerateBusy(busy) {
+      if (busy) {
+        generateConfirmBtn.classList.add('loading');
+        generateConfirmBtn.textContent = 'Generating…';
+        generateConfirmBtn.setAttribute('aria-busy', 'true');
+      } else {
+        generateConfirmBtn.classList.remove('loading');
+        generateConfirmBtn.textContent = 'Generate board';
+        generateConfirmBtn.removeAttribute('aria-busy');
+      }
+    }
+
+    generateBtn.addEventListener('click', openGenerateModal);
+    generateCloseBtn.addEventListener('click', closeGenerateModal);
+    generateCancelBtn.addEventListener('click', closeGenerateModal);
+    generateBackdrop.addEventListener('click', (e) => {
+      if (e.target === generateBackdrop) closeGenerateModal();
+    });
+
+    generateConfirmBtn.addEventListener('click', async () => {
+      const text = generateArea.value.trim();
+      if (!text) {
+        showToast('Paste some questions first.', 'error');
+        return;
+      }
+      setGenerateBusy(true);
+      try {
+        const res = await fetch('/api/tools/jeopardy/generate', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ mode: 'parse', text }),
+        });
+        const payload = await res.json().catch(() => null);
+        if (!res.ok || !payload || !payload.ok) {
+          const msg = (payload && payload.error) || 'Generation failed. Try again in a moment.';
+          showToast(msg, 'error');
+          setGenerateBusy(false);
+          return;
+        }
+        // Merge in the teacher's optional title override.
+        const generated = normalizeState(payload.data);
+        const titleOverride = generateTitleInput.value.trim();
+        if (titleOverride) generated.title = titleOverride;
+        pendingGeneratedState = generated;
+        generateBackdrop.hidden = true;
+        setGenerateBusy(false);
+        openPreviewModal(generated, payload.meta && payload.meta.filled);
+      } catch (err) {
+        console.warn('generate error', err);
+        showToast('Network error. Try again.', 'error');
+        setGenerateBusy(false);
+      }
+    });
+
+    function openPreviewModal(gen, filledCount) {
+      renderPreview(gen);
+      if (typeof filledCount === 'number') {
+        const total = CATEGORY_COUNT * POINT_LEVELS.length;
+        previewMeta.textContent = filledCount + ' of ' + total + ' cells filled';
+      } else {
+        previewMeta.textContent = '';
+      }
+      previewBackdrop.hidden = false;
+      setTimeout(() => previewConfirmBtn.focus(), 20);
+    }
+    function closePreviewModal() {
+      previewBackdrop.hidden = true;
+      pendingGeneratedState = null;
+    }
+
+    function renderPreview(gen) {
+      previewGrid.innerHTML = '';
+      for (let c = 0; c < CATEGORY_COUNT; c++) {
+        const col = document.createElement('div');
+        col.className = 'previewCat';
+        const name = document.createElement('div');
+        name.className = 'previewCatName';
+        name.textContent = (gen.categories[c] && gen.categories[c].name) || ('Category ' + (c + 1));
+        col.appendChild(name);
+        for (let q = 0; q < POINT_LEVELS.length; q++) {
+          const item = gen.categories[c].questions[q];
+          const isEmpty = !item.question || !item.answer;
+          const clue = document.createElement('div');
+          clue.className = 'previewClue' + (isEmpty ? ' empty' : '');
+          const top = document.createElement('div');
+          top.className = 'previewClueTop';
+          top.textContent = '$' + item.points;
+          const qText = document.createElement('div');
+          qText.className = 'previewClueText';
+          qText.textContent = isEmpty ? '(empty)' : item.question;
+          const aText = document.createElement('div');
+          aText.className = 'previewClueAns';
+          aText.textContent = isEmpty ? '' : item.answer;
+          clue.appendChild(top);
+          clue.appendChild(qText);
+          if (!isEmpty) clue.appendChild(aText);
+          col.appendChild(clue);
+        }
+        previewGrid.appendChild(col);
+      }
+    }
+
+    previewCloseBtn.addEventListener('click', closePreviewModal);
+    previewCancelBtn.addEventListener('click', closePreviewModal);
+    previewBackdrop.addEventListener('click', (e) => {
+      if (e.target === previewBackdrop) closePreviewModal();
+    });
+    previewConfirmBtn.addEventListener('click', () => {
+      if (!pendingGeneratedState) return;
+      state = pendingGeneratedState;
+      pendingGeneratedState = null;
+      save();
+      render();
+      previewBackdrop.hidden = true;
+      showToast('Board generated. Edit any cell to refine.');
     });
 
     // =============================================================================

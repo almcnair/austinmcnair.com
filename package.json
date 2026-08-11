@@ -12,8 +12,12 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.116.0",
     "@astrojs/mdx": "^7.0.3",
     "@astrojs/sitemap": "^3.7.3",
+    "@astrojs/vercel": "^11.0.5",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.38.2",
     "astro": "^7.1.1"
   }
 }
