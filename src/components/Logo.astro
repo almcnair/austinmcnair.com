@@ -1,0 +1,27 @@
+---
+// Logo.astro — AM monogram
+// Inherits currentColor from parent, so it adopts the wordmark's color
+// automatically in Console/Paper modes.
+interface Props {
+  size?: number | string;
+  class?: string;
+  ariaLabel?: string;
+}
+const { size = 32, class: cls = '', ariaLabel = 'Austin McNair' } = Astro.props;
+---
+
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 200 200"
+  width={size}
+  height={size}
+  class={cls}
+  role="img"
+  aria-label={ariaLabel}
+>
+  <g fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="butt" stroke-linejoin="miter">
+    <path d="M 30 170 L 72 30 L 114 170" />
+    <path d="M 114 170 L 114 30 L 152 115 L 190 30 L 190 170" />
+    <path d="M 51 115 L 152 115" stroke-width="8" />
+  </g>
+</svg>
