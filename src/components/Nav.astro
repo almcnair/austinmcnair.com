@@ -1,4 +1,5 @@
 ---
+import Logo from './Logo.astro';
 const resources = [
   { href: '/tools/brain-breaks/', label: 'Brain Breaks Wheel' },
   { href: '/tools/jeopardy/', label: 'Jeopardy Builder' },
@@ -6,7 +7,10 @@ const resources = [
 ---
 
 <nav class="site-nav" aria-label="Primary">
-  <a href="/" class="wordmark" aria-label="Austin McNair — home">Austin McNair</a>
+  <a href="/" class="wordmark" aria-label="Austin McNair — home">
+    <Logo size={28} class="wordmark-logo" />
+    <span class="wordmark-text">Austin McNair</span>
+  </a>
   <ul class="links">
     <li><a href="/#work">Work</a></li>
     <li><a href="/#writing">Writing</a></li>
@@ -70,15 +74,13 @@ const resources = [
     gap: 10px;
     border: none;
   }
-  .wordmark::before {
-    content: '';
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--cyan);
-    box-shadow: 0 0 12px rgba(34, 211, 238, 0.5);
+  .wordmark-logo {
+    color: var(--text);
+    display: block;
+    transition: color 0.15s ease;
   }
   .wordmark:hover { color: var(--cyan); border: none; }
+  .wordmark:hover .wordmark-logo { color: var(--cyan); }
 
   .links {
     display: flex;
