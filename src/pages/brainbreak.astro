@@ -1,6 +1,892 @@
 ---
-// Short-URL redirect → /tools/brain-breaks
-// Keeps austinmcnair.com/brainbreak as a memorable shortcut for the
-// classroom tool that already lives at /tools/brain-breaks.
-return Astro.redirect('/tools/brain-breaks', 308);
+import Layout from '../layouts/Layout.astro';
+
+const title = 'Brain Breaks Wheel — Austin McNair';
+const description =
+  'A free, browser-based brain breaks wheel for K–8 classrooms. Twelve brain breaks, spun at random — physical, academic, social, or games. Customize the labels for your room. Sourced from Inclusion Rules.';
 ---
+
+<Layout title={title} description={description}>
+  <section class="tool">
+    <div class="wrap">
+      <header class="tool-header">
+        <div class="eyebrow">Teacher tool · Free · No account</div>
+        <h1>A brain breaks wheel <em>for when the room needs to move.</em></h1>
+        <p class="dek">
+          Twelve brain breaks, spun at random. Physical, academic, social, or plain silly — whatever the wheel
+          lands on, that's what the room does next. Hit "New 12" to reshuffle. Tap "Edit wheel" to customize
+          any activity for your classroom — changes save to this browser.
+        </p>
+      </header>
+
+      <div class="layout">
+        <div>
+          <div class="wheel-stage">
+            <div class="pointer" aria-hidden="true"></div>
+            <div class="wheel-shell">
+              <svg class="wheel" id="wheel" viewBox="-200 -200 400 400" role="img" aria-label="Brain breaks spinning wheel"></svg>
+            </div>
+            <div class="hub" id="hub" title="Spin" tabindex="0" role="button" aria-label="Spin the wheel">Spin</div>
+          </div>
+          <div class="controls">
+            <button class="btn" id="spinBtn">Spin the wheel</button>
+            <button class="btn ghost" id="resetBtn">New 12</button>
+            <button class="btn ghost" id="editBtn" aria-expanded="false" aria-controls="editor">Edit wheel</button>
+          </div>
+          <div class="legend" aria-label="Category legend">
+            <span><i style="background:var(--cat-physical)"></i> Physical</span>
+            <span><i style="background:var(--cat-academic)"></i> Academic</span>
+            <span><i style="background:var(--cat-social)"></i> Social</span>
+            <span><i style="background:var(--cat-games)"></i> Games</span>
+          </div>
+        </div>
+
+        <aside class="result empty" id="result" aria-live="polite">
+          <div>Give it a spin. Your brain break will show up here with instructions.</div>
+        </aside>
+      </div>
+
+      <section class="editor" id="editor" hidden aria-labelledby="editorTitle">
+        <div class="editor-head">
+          <h2 id="editorTitle">Edit the 12 activities on your wheel</h2>
+          <p>Change any title, category, or instructions. Edits save to this browser and stick to the activity — they'll follow it across "New 12" reshuffles until you hit "Reset to defaults."</p>
+        </div>
+        <div class="editor-list" id="editorList" role="list"></div>
+        <div class="editor-actions">
+          <button class="btn" id="saveBtn">Save changes</button>
+          <button class="btn ghost" id="cancelBtn">Cancel</button>
+          <button class="btn ghost danger" id="factoryResetBtn">Reset to defaults</button>
+        </div>
+      </section>
+
+      <section class="citation">
+        <p>
+          The twenty-four brain breaks on this wheel come from <a href="https://inclusionrules.com/downloads/" target="_blank" rel="noopener">Inclusion Rules ↗</a>, a resource library for inclusive classroom practice. Grab the original guides and downloads there.
+        </p>
+      </section>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  /* Tool-scoped extra tokens. Site-level tokens (--void, --panel, --cyan, etc.)
+     already live in global.css. */
+  .tool {
+    --cat-physical: #22D3EE;
+    --cat-academic: #E8B15C;
+    --cat-social:   #EC5D9E;
+    --cat-games:    #7C87C9;
+  }
+
+  .wrap {
+    max-width: var(--site-max);
+    margin: 0 auto;
+    padding: 64px var(--edge-pad) 96px;
+  }
+  @media (max-width: 720px) {
+    .wrap { padding: 40px var(--edge-pad) 72px; }
+  }
+
+  .tool-header {
+    max-width: var(--content-max);
+    margin: 0 auto 56px;
+  }
+  .eyebrow {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 24px;
+  }
+  .eyebrow::before {
+    content: '';
+    width: 28px;
+    height: 1px;
+    background: var(--text-faint);
+  }
+  h1 {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: clamp(38px, 5.4vw, 58px);
+    letter-spacing: -0.02em;
+    line-height: 1.08;
+    margin: 0 0 20px;
+    color: var(--text);
+  }
+  h1 em { font-style: italic; color: var(--cyan); }
+  .dek {
+    font-family: var(--font-serif);
+    font-size: 20px;
+    line-height: 1.55;
+    color: var(--text-dim);
+    margin: 0;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(280px, 1fr) minmax(280px, 1fr);
+    gap: 48px;
+    align-items: start;
+  }
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; gap: 40px; }
+  }
+
+  .wheel-stage {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    width: 100%;
+    max-width: 520px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .pointer {
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0; height: 0;
+    border-left: 18px solid transparent;
+    border-right: 18px solid transparent;
+    border-top: 30px solid var(--text);
+    filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));
+    z-index: 3;
+  }
+  .wheel-shell {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    padding: 6px;
+    background: var(--line);
+    box-shadow:
+      0 20px 60px rgba(0,0,0,0.5),
+      0 0 0 1px rgba(255,255,255,0.04) inset;
+  }
+  .wheel {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: var(--void);
+    transition: transform 5.6s cubic-bezier(0.14, 0.72, 0.10, 1.00);
+    transform: rotate(0deg);
+    display: block;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .wheel { transition: transform 300ms ease; }
+  }
+  .hub {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 78px; height: 78px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: var(--cyan);
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    z-index: 2;
+    user-select: none;
+    cursor: pointer;
+    transition: background 200ms ease, color 200ms ease, border-color 200ms ease;
+  }
+  .hub:hover { background: var(--cyan); color: var(--void); border-color: var(--cyan); }
+  .hub:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+
+  .controls {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 28px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: 0.02em;
+    padding: 14px 22px;
+    border-radius: 4px;
+    border: 1px solid var(--cyan);
+    color: var(--cyan);
+    background: transparent;
+    cursor: pointer;
+    transition: background 200ms ease, color 200ms ease, border-color 200ms ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .btn:hover { background: var(--cyan); color: var(--void); }
+  .btn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn:disabled:hover { background: transparent; color: var(--cyan); }
+  .btn.ghost {
+    border-color: var(--line);
+    color: var(--text-dim);
+  }
+  .btn.ghost:hover { background: var(--panel); color: var(--text); border-color: var(--text-faint); }
+  .btn.ghost.danger { border-color: var(--line); color: var(--text-faint); }
+  .btn.ghost.danger:hover { background: transparent; color: var(--cat-social); border-color: var(--cat-social); }
+
+  .legend {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 24px;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 8px; }
+  .legend i {
+    width: 10px; height: 10px; border-radius: 50%;
+    display: inline-block;
+  }
+
+  .result {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 32px;
+    min-height: 340px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .result.empty {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--text-faint);
+  }
+  .result.empty div {
+    max-width: 320px;
+    font-family: var(--font-serif);
+    font-size: 17px;
+    line-height: 1.55;
+  }
+  .result :global(.cat) {
+    display: inline-flex;
+    align-self: flex-start;
+    font-family: var(--font-sans);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-weight: 600;
+    padding: 5px 10px;
+    border-radius: 3px;
+    color: var(--void);
+  }
+  .result :global(.title) {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: clamp(26px, 3.4vw, 34px);
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+    color: var(--text);
+  }
+  .result :global(.how) {
+    font-family: var(--font-serif);
+    color: var(--text);
+    font-size: 18px;
+    line-height: 1.65;
+  }
+  .result :global(.how strong) {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    display: block;
+    margin-bottom: 6px;
+  }
+  .result :global(.cat.physical) { background: var(--cat-physical); }
+  .result :global(.cat.academic) { background: var(--cat-academic); }
+  .result :global(.cat.social)   { background: var(--cat-social); color: var(--text); }
+  .result :global(.cat.games)    { background: var(--cat-games);  color: var(--text); }
+
+  /* --- Editor panel --- */
+  .editor {
+    margin-top: 56px;
+    padding: 32px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel);
+  }
+  .editor[hidden] { display: none; }
+  .editor-head h2 {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: clamp(24px, 3vw, 30px);
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    color: var(--text);
+    margin: 0 0 8px;
+  }
+  .editor-head h2 :global(em) { font-style: italic; color: var(--cyan); }
+  .editor-head p {
+    font-family: var(--font-serif);
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--text-dim);
+    margin: 0 0 24px;
+    max-width: 60ch;
+  }
+  .editor-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .editor-row {
+    background: var(--void);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .editor-row .row-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-sans);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+  .editor-row .row-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    display: inline-block;
+    margin-right: 6px;
+  }
+  .editor-row label {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    display: block;
+    margin: 2px 0 4px;
+  }
+  .editor-row input[type="text"],
+  .editor-row textarea,
+  .editor-row select {
+    width: 100%;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 10px 12px;
+    border-radius: 4px;
+    box-sizing: border-box;
+  }
+  .editor-row textarea {
+    resize: vertical;
+    min-height: 72px;
+    font-family: var(--font-serif);
+    font-size: 15px;
+  }
+  .editor-row input:focus,
+  .editor-row textarea:focus,
+  .editor-row select:focus {
+    outline: 2px solid var(--cyan);
+    outline-offset: 1px;
+    border-color: var(--cyan);
+  }
+  .editor-row.dirty { border-color: var(--cyan); }
+  .editor-row .edited-tag {
+    font-family: var(--font-sans);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--cyan);
+  }
+  .editor-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+  }
+
+  /* --- Citation strip --- */
+  .citation {
+    max-width: var(--content-max);
+    margin: 96px auto 0;
+    padding-top: 40px;
+    border-top: 1px solid var(--line);
+  }
+  .citation p {
+    font-family: var(--font-serif);
+    font-size: 17px;
+    line-height: 1.65;
+    color: var(--text-dim);
+    margin: 0;
+  }
+  .citation a {
+    color: var(--warm);
+    border-bottom: 1px solid transparent;
+    transition: border-color 200ms ease;
+  }
+  .citation a:hover { border-bottom-color: var(--warm); }
+  .citation a:focus-visible {
+    outline: 2px solid var(--warm);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+</style>
+
+<script is:inline>
+  (function () {
+    // --- Default library (24 activities, keyed by stable id) ---
+    const DEFAULTS = [
+      { id: "p_dance_party",       cat: "physical", title: "Dance Party",         how: "Play any short, upbeat song and let students move freely — no choreography, just shake it out for 60–90 seconds." },
+      { id: "p_structured_dance",  cat: "physical", title: "Structured Dance",    how: "Lead the class in a group dance: the chicken dance, the twist, or the hand jive. Everyone follows along." },
+      { id: "p_cardio_burst",      cat: "physical", title: "Cardio Burst",        how: "Do 25 jumping jacks, 25 high knees, or run in place for 30 seconds. Count out loud together." },
+      { id: "p_chair_aerobics",    cat: "physical", title: "Chair Aerobics",      how: "Stay seated and do arm punches, seated marches, side reaches, and shoulder rolls. Accessible movement for everyone." },
+      { id: "p_yoga_arm_circles",  cat: "physical", title: "Yoga Poses & Arm Circles", how: "Try tree pose, mountain pose, or forward fold. Add slow arm circles and deep breathing for grounding." },
+      { id: "p_conga_line",        cat: "physical", title: "Conga Line",          how: "Form a line, hands on shoulders, and snake through the classroom doing simple moves — knee lifts, kicks, claps." },
+
+      { id: "a_act_vocab",         cat: "academic", title: "Act Out Vocabulary",  how: "Pick a current vocab word. Students use their bodies (Total Physical Response) to act out the meaning. No talking." },
+      { id: "a_air_writing",       cat: "academic", title: "Air Writing",         how: "Write spelling words, math facts, or draw geometric shapes in the air using big arm movements. Whole-body handwriting." },
+      { id: "a_body_spelling",     cat: "academic", title: "Body Spelling",       how: "Spell your name or a vocabulary word by making a different body pose for each letter — arms up for A, twist for T, and so on." },
+      { id: "a_who_let_dogs_out",  cat: "academic", title: "Who Let the Dogs Out", how: "Toss a small plush toy around the room. Whoever catches it names one thing they've learned so far today, then tosses to someone else." },
+
+      { id: "s_silent_lineup",     cat: "social",   title: "Silent Line-Up",      how: "Students line up in order — by birthday, number of siblings, or house number — without talking. Point, gesture, mime only." },
+      { id: "s_walk_and_talk",     cat: "social",   title: "Walk & Talk",         how: "Grab a partner and take a one-minute walk around the room. Discuss a prompt, or just check in with each other." },
+      { id: "s_handshake_design",  cat: "social",   title: "Handshake Design",    how: "Partner up and design a unique 4-step handshake. Practice it. Be ready to demo to the class." },
+      { id: "s_charades",          cat: "social",   title: "Charades",            how: "Break into small groups. One person acts out a word or phrase silently; the group guesses. No talking from the actor." },
+      { id: "s_telephone",         cat: "social",   title: "Telephone",           how: "Sit or stand in a circle. Whisper a short phrase to the person next to you. Pass it around. Compare the start and the end — laugh at the drift." },
+      { id: "s_rps",               cat: "social",   title: "Rock, Paper, Scissors", how: "Quick partner tournament. Winners find new winners. Last one standing gets bragging rights." },
+
+      { id: "g_the_wave",          cat: "games",    title: "The Wave",            how: "Do the wave around the room like a stadium crowd. First at normal speed, then fast, then in slow-motion." },
+      { id: "g_no_hands_potato",   cat: "games",    title: "No-Hands Hot Potato", how: "Keep a balloon in the air using only elbows, heads, knees, or shoulders. No hands. Don't let it touch the floor." },
+      { id: "g_beach_ball_toss",   cat: "games",    title: "Beach Ball Toss",     how: "Toss a beach ball around the room. Whoever catches it answers a quick prompt, then passes it on." },
+      { id: "g_great_wind_blows",  cat: "games",    title: "Great Wind Blows",    how: "Musical-chairs style. Teacher says \"the great wind blows for anyone who…\" (has sneakers, ate cereal, etc.). Anyone it applies to swaps seats." },
+      { id: "g_room_exploration",  cat: "games",    title: "Room Exploration",    how: "Touch all 4 walls of the room and return to your seat as fast — and safely — as possible. Go." },
+      { id: "g_limbo",             cat: "games",    title: "Limbo",               how: "Hold a broom or string horizontally. Students take turns going under, leaning back. Lower it each round." },
+      { id: "g_simon_says",        cat: "games",    title: "Simon Says",          how: "Classic rules. Teacher (or a student) is Simon. Only follow commands prefaced with \"Simon says.\" Out if you slip up." },
+      { id: "g_four_corners",      cat: "games",    title: "Four Corners",        how: "Label the 4 corners 1–4. Students pick a corner while one player (eyes closed) calls a number. That corner is out. Repeat." }
+    ];
+
+    const STORAGE_KEY = "brainbreak.overrides.v1";
+    const LABEL_COLORS = { physical: "#090C1F", academic: "#090C1F", social: "#F1F4FF", games: "#F1F4FF" };
+    const LABELS = { physical: "Physical", academic: "Academic", social: "Social", games: "Games" };
+
+    // --- Persistence: overrides map { id: {cat?, title?, how?} } ---
+    function loadOverrides() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return {};
+        const parsed = JSON.parse(raw);
+        return (parsed && typeof parsed === "object") ? parsed : {};
+      } catch (e) { return {}; }
+    }
+    function saveOverrides(map) {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(map)); } catch (e) { /* quota / private mode: fail quietly */ }
+    }
+    function clearOverrides() {
+      try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+    }
+
+    // Merge defaults with overrides → the "current library" of 24 activities.
+    function currentLibrary() {
+      const overrides = loadOverrides();
+      return DEFAULTS.map(d => {
+        const o = overrides[d.id] || {};
+        return {
+          id: d.id,
+          cat: o.cat || d.cat,
+          title: (o.title != null) ? o.title : d.title,
+          how: (o.how != null) ? o.how : d.how
+        };
+      });
+    }
+
+    // Read runtime CSS var colors (respect any brand overrides in global.css).
+    const rootStyles = getComputedStyle(document.querySelector('.tool'));
+    const COLORS = {
+      physical: rootStyles.getPropertyValue('--cat-physical').trim() || "#22D3EE",
+      academic: rootStyles.getPropertyValue('--cat-academic').trim() || "#E8B15C",
+      social:   rootStyles.getPropertyValue('--cat-social').trim()   || "#EC5D9E",
+      games:    rootStyles.getPropertyValue('--cat-games').trim()    || "#7C87C9"
+    };
+
+    // --- Wheel geometry & rendering ---
+    const wheel = document.getElementById("wheel");
+    const WHEEL_SIZE = 12;
+    const R = 190;
+    const RLabelInner = 62;
+
+    let ACTIVE = [];   // 12 slots currently on the wheel
+    let pool = [];     // reshuffle queue
+    const slice = 360 / WHEEL_SIZE;
+
+    function polar(r, deg) {
+      const rad = (deg - 90) * Math.PI / 180;
+      return [r * Math.cos(rad), r * Math.sin(rad)];
+    }
+
+    function shuffle(arr) {
+      const a = arr.slice();
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function drawActive() {
+      const lib = currentLibrary();
+      const needed = WHEEL_SIZE;
+      // Rebuild pool if it can't fund a full 12-slot draw. Bias to keep the current tail last.
+      if (pool.length < needed) {
+        const tail = pool.slice();
+        let fresh = shuffle(lib);
+        if (tail.length) {
+          const tailIds = new Set(tail.map(b => b.id));
+          fresh.sort((a, b) => {
+            const aTail = tailIds.has(a.id) ? 1 : 0;
+            const bTail = tailIds.has(b.id) ? 1 : 0;
+            return aTail - bTail;
+          });
+        }
+        pool = tail.concat(fresh);
+      }
+      ACTIVE = pool.slice(0, needed);
+      pool = pool.slice(needed);
+    }
+
+    // If the user edited items on the wheel while it was showing them,
+    // refresh ACTIVE from currentLibrary() by id (no reshuffle, keep order).
+    function refreshActiveFromLibrary() {
+      const lib = currentLibrary();
+      const byId = new Map(lib.map(b => [b.id, b]));
+      ACTIVE = ACTIVE.map(a => byId.get(a.id) || a);
+    }
+
+    function makeSlice(i) {
+      const a0 = i * slice;
+      const a1 = (i + 1) * slice;
+      const [x0, y0] = polar(R, a0);
+      const [x1, y1] = polar(R, a1);
+      const large = slice > 180 ? 1 : 0;
+      const d = `M 0 0 L ${x0.toFixed(3)} ${y0.toFixed(3)} A ${R} ${R} 0 ${large} 1 ${x1.toFixed(3)} ${y1.toFixed(3)} Z`;
+      const color = COLORS[ACTIVE[i].cat] || COLORS.physical;
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", d);
+      path.setAttribute("fill", color);
+      path.setAttribute("stroke", "#090C1F");
+      path.setAttribute("stroke-width", "1.5");
+      return path;
+    }
+
+    function makeLabel(i) {
+      const mid = i * slice + slice / 2;
+      const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+
+      const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      text.setAttribute("fill", LABEL_COLORS[ACTIVE[i].cat] || "#090C1F");
+      text.setAttribute("font-family", "Inter, ui-sans-serif, system-ui, sans-serif");
+      text.setAttribute("font-weight", "600");
+      text.setAttribute("font-size", "14");
+      text.setAttribute("letter-spacing", "0.01em");
+      text.setAttribute("dominant-baseline", "middle");
+
+      let t = ACTIVE[i].title || "";
+      const maxChars = 20;
+      if (t.length > maxChars) t = t.slice(0, maxChars - 1) + "…";
+      text.textContent = t;
+
+      const rightSide = mid < 180;
+      if (rightSide) {
+        g.setAttribute("transform", `rotate(${mid - 90})`);
+        text.setAttribute("text-anchor", "start");
+        text.setAttribute("x", RLabelInner.toString());
+        text.setAttribute("y", "0");
+      } else {
+        g.setAttribute("transform", `rotate(${mid + 90})`);
+        text.setAttribute("text-anchor", "end");
+        text.setAttribute("x", (-RLabelInner).toString());
+        text.setAttribute("y", "0");
+      }
+
+      g.appendChild(text);
+      return g;
+    }
+
+    function renderWheel() {
+      while (wheel.firstChild) wheel.removeChild(wheel.firstChild);
+      for (let i = 0; i < WHEEL_SIZE; i++) wheel.appendChild(makeSlice(i));
+      for (let i = 0; i < WHEEL_SIZE; i++) wheel.appendChild(makeLabel(i));
+      const inner = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      inner.setAttribute("r", "40");
+      inner.setAttribute("fill", "#090C1F");
+      inner.setAttribute("stroke", "#232852");
+      inner.setAttribute("stroke-width", "1.5");
+      wheel.appendChild(inner);
+    }
+
+    drawActive();
+    renderWheel();
+
+    // --- Spin ---
+    const spinBtn = document.getElementById("spinBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const hub = document.getElementById("hub");
+    const resultEl = document.getElementById("result");
+
+    let currentRotation = 0;
+    let spinning = false;
+
+    function spin() {
+      if (spinning) return;
+      spinning = true;
+      spinBtn.disabled = true;
+
+      const idx = Math.floor(Math.random() * WHEEL_SIZE);
+      const target = 360 - (idx * slice + slice / 2);
+      const spins = 6;
+      const currentMod = ((currentRotation % 360) + 360) % 360;
+      const delta = ((target - currentMod) + 360) % 360;
+      const nextRotation = currentRotation + spins * 360 + delta;
+      currentRotation = nextRotation;
+      wheel.style.transform = `rotate(${nextRotation}deg)`;
+
+      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const wait = prefersReduced ? 320 : 5700;
+      setTimeout(() => {
+        showResult(ACTIVE[idx]);
+        spinning = false;
+        spinBtn.disabled = false;
+      }, wait);
+    }
+
+    function reshuffleWheel() {
+      if (spinning) return;
+      drawActive();
+      const prevTransition = wheel.style.transition;
+      wheel.style.transition = "none";
+      currentRotation = 0;
+      wheel.style.transform = "rotate(0deg)";
+      void wheel.getBoundingClientRect();
+      renderWheel();
+      wheel.style.transition = prevTransition;
+      resetResult();
+    }
+
+    function escapeHtml(s) {
+      return String(s || "").replace(/[&<>"']/g, function (c) {
+        return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c];
+      });
+    }
+
+    function showResult(b) {
+      resultEl.classList.remove("empty");
+      resultEl.innerHTML =
+        '<span class="cat ' + b.cat + '">' + escapeHtml(LABELS[b.cat] || "") + '</span>' +
+        '<div class="title">' + escapeHtml(b.title) + '</div>' +
+        '<div class="how"><strong>How to do it</strong>' + escapeHtml(b.how) + '</div>';
+    }
+
+    function resetResult() {
+      resultEl.classList.add("empty");
+      resultEl.innerHTML = '<div>Give it a spin. Your brain break will show up here with instructions.</div>';
+    }
+
+    spinBtn.addEventListener("click", spin);
+    hub.addEventListener("click", spin);
+    hub.addEventListener("keydown", (e) => {
+      if (e.code === "Space" || e.code === "Enter") { e.preventDefault(); spin(); }
+    });
+    resetBtn.addEventListener("click", reshuffleWheel);
+
+    // --- Editor ---
+    const editBtn = document.getElementById("editBtn");
+    const editor = document.getElementById("editor");
+    const editorList = document.getElementById("editorList");
+    const saveBtn = document.getElementById("saveBtn");
+    const cancelBtn = document.getElementById("cancelBtn");
+    const factoryResetBtn = document.getElementById("factoryResetBtn");
+
+    // Draft state while the editor is open. Keyed by id so it survives category swaps in the form.
+    let draft = {}; // id -> { cat, title, how }
+
+    function buildDraft() {
+      draft = {};
+      ACTIVE.forEach(item => {
+        draft[item.id] = { cat: item.cat, title: item.title, how: item.how };
+      });
+    }
+
+    function itemById(id) {
+      return DEFAULTS.find(d => d.id === id);
+    }
+
+    function isDirty(id) {
+      const def = itemById(id);
+      const cur = draft[id];
+      if (!def || !cur) return false;
+      return def.cat !== cur.cat || def.title !== cur.title || def.how !== cur.how;
+    }
+
+    function renderEditor() {
+      editorList.innerHTML = "";
+      ACTIVE.forEach((item, idx) => {
+        const cur = draft[item.id];
+        const row = document.createElement("div");
+        row.className = "editor-row" + (isDirty(item.id) ? " dirty" : "");
+        row.setAttribute("role", "listitem");
+        row.dataset.id = item.id;
+
+        const catColor = COLORS[cur.cat] || COLORS.physical;
+        const editedTag = isDirty(item.id) ? '<span class="edited-tag">Edited</span>' : '';
+
+        row.innerHTML =
+          '<div class="row-head">' +
+            '<span><span class="row-dot" style="background:' + catColor + '"></span>Slice ' + (idx + 1) + '</span>' +
+            editedTag +
+          '</div>' +
+          '<label for="title-' + item.id + '">Title</label>' +
+          '<input id="title-' + item.id + '" type="text" data-field="title" maxlength="60" value="' + escapeHtml(cur.title) + '">' +
+          '<label for="cat-' + item.id + '">Category</label>' +
+          '<select id="cat-' + item.id + '" data-field="cat">' +
+            '<option value="physical"' + (cur.cat === "physical" ? " selected" : "") + '>Physical</option>' +
+            '<option value="academic"' + (cur.cat === "academic" ? " selected" : "") + '>Academic</option>' +
+            '<option value="social"'   + (cur.cat === "social"   ? " selected" : "") + '>Social</option>' +
+            '<option value="games"'    + (cur.cat === "games"    ? " selected" : "") + '>Games</option>' +
+          '</select>' +
+          '<label for="how-' + item.id + '">How to do it</label>' +
+          '<textarea id="how-' + item.id + '" data-field="how" rows="3">' + escapeHtml(cur.how) + '</textarea>';
+
+        editorList.appendChild(row);
+      });
+
+      // Wire up input listeners (delegate at editorList level).
+    }
+
+    editorList.addEventListener("input", (e) => {
+      const row = e.target.closest(".editor-row");
+      if (!row) return;
+      const id = row.dataset.id;
+      const field = e.target.dataset.field;
+      if (!id || !field || !draft[id]) return;
+      draft[id][field] = e.target.value;
+
+      // Update dirty marker + swatch color without a full re-render.
+      const dirty = isDirty(id);
+      row.classList.toggle("dirty", dirty);
+      const head = row.querySelector(".row-head");
+      if (head) {
+        const existing = head.querySelector(".edited-tag");
+        if (dirty && !existing) {
+          const tag = document.createElement("span");
+          tag.className = "edited-tag";
+          tag.textContent = "Edited";
+          head.appendChild(tag);
+        } else if (!dirty && existing) {
+          existing.remove();
+        }
+      }
+      if (field === "cat") {
+        const dot = row.querySelector(".row-dot");
+        if (dot) dot.style.background = COLORS[draft[id].cat] || COLORS.physical;
+      }
+    });
+
+    function openEditor() {
+      buildDraft();
+      renderEditor();
+      editor.hidden = false;
+      editBtn.setAttribute("aria-expanded", "true");
+      editor.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function closeEditor() {
+      editor.hidden = true;
+      editBtn.setAttribute("aria-expanded", "false");
+      editBtn.focus();
+    }
+
+    function commitDraftToOverrides() {
+      const overrides = loadOverrides();
+      Object.keys(draft).forEach(id => {
+        const def = itemById(id);
+        const cur = draft[id];
+        if (!def || !cur) return;
+        const diff = {};
+        if (cur.cat !== def.cat)     diff.cat = cur.cat;
+        if (cur.title !== def.title) diff.title = cur.title;
+        if (cur.how !== def.how)     diff.how = cur.how;
+        if (Object.keys(diff).length === 0) {
+          // No difference from default — clear any prior override.
+          delete overrides[id];
+        } else {
+          overrides[id] = diff;
+        }
+      });
+      saveOverrides(overrides);
+    }
+
+    editBtn.addEventListener("click", () => {
+      if (editor.hidden) openEditor();
+      else closeEditor();
+    });
+
+    cancelBtn.addEventListener("click", () => {
+      closeEditor();
+    });
+
+    saveBtn.addEventListener("click", () => {
+      // Basic guard: don't allow blank titles.
+      const blank = Object.values(draft).find(d => !d.title || !d.title.trim());
+      if (blank) {
+        alert("Every slice needs a title. Fill in the empty ones (or hit Cancel).");
+        return;
+      }
+      commitDraftToOverrides();
+      // Refresh the on-wheel labels without reshuffling positions.
+      refreshActiveFromLibrary();
+      renderWheel();
+      // Also refresh the pool so future "New 12" pulls include the edits.
+      pool = pool.map(p => {
+        const merged = currentLibrary().find(x => x.id === p.id);
+        return merged || p;
+      });
+      closeEditor();
+    });
+
+    factoryResetBtn.addEventListener("click", () => {
+      const ok = confirm("Reset all activities back to their original text and category? This clears every edit you've saved in this browser.");
+      if (!ok) return;
+      clearOverrides();
+      buildDraft();       // re-seed draft from defaults (via currentLibrary → ACTIVE)
+      refreshActiveFromLibrary();
+      renderWheel();
+      renderEditor();
+    });
+  })();
+</script>
+</Layout>
